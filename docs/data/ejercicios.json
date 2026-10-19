@@ -6,11 +6,6 @@
    "detalle": "def, parámetros y return"
   },
   {
-   "id": "dep",
-   "nombre": "Depuración",
-   "detalle": "Tipos de error y cómo leerlos"
-  },
-  {
    "id": "for",
    "nombre": "Ciclo for",
    "detalle": "range, acumulador y contador"
@@ -33,7 +28,7 @@
   {
    "id": "ret",
    "nombre": "Retos",
-   "detalle": "Todo junto, programas cortos"
+   "detalle": "Funciones con listas: agregar, buscar, promediar"
   }
  ],
  "tipos": {
@@ -320,147 +315,6 @@
      "resultado": "40.0"
     }
    ]
-  },
-  {
-   "id": "dep1",
-   "tema": "dep",
-   "tipo": "opcion",
-   "pregunta": "Un programa corre sin marcar error, pero el promedio que calcula está mal. ¿Qué tipo de error es?",
-   "explicacion": "Los errores lógicos no los detecta Python: solo aparecen si pruebas el programa y revisas el resultado.",
-   "opciones": [
-    "De sintaxis",
-    "De ejecución (excepción)",
-    "Lógico",
-    "IndentationError"
-   ],
-   "correcta": 2
-  },
-  {
-   "id": "dep2",
-   "tema": "dep",
-   "tipo": "opcion",
-   "pregunta": "¿Qué error marca esta línea?",
-   "codigo": "telefono = int(\"222-222-2222\")",
-   "explicacion": "El dato es un texto (tipo correcto para int()), pero su contenido no se puede convertir a número: ValueError.",
-   "opciones": [
-    "SyntaxError",
-    "ValueError",
-    "TypeError",
-    "NameError"
-   ],
-   "correcta": 1
-  },
-  {
-   "id": "dep3",
-   "tema": "dep",
-   "tipo": "opcion",
-   "pregunta": "Lee el traceback. ¿Qué pasó y en qué línea?",
-   "codigo": "Traceback (most recent call last):\n  File \"saludo.py\", line 2, in <module>\n    print(texto)\nNameError: name 'texto' is not defined",
-   "explicacion": "La última línea dice el tipo (NameError) y la anterior el lugar (line 2): texto no se creó o se escribió distinto.",
-   "opciones": [
-    "Línea 1: falta un paréntesis",
-    "Línea 2: se usa una variable que no existe (o está mal escrita)",
-    "Línea 2: se dividió entre cero",
-    "Línea 3: la sangría está mal"
-   ],
-   "correcta": 1
-  },
-  {
-   "id": "dep4",
-   "tema": "dep",
-   "tipo": "error",
-   "enunciado": "Este programa marca SyntaxError. Toca la línea con el error.",
-   "codigo": "edad = 18\nprint(\"Tienes\" edad \"años\")",
-   "explicacion": "En print() los valores se separan con comas. Con + marcaría TypeError, porque edad es un número.",
-   "linea": 2,
-   "opciones": [
-    "print(\"Tienes\", edad, \"años\")",
-    "print(\"Tienes\" + edad + \"años\")",
-    "print(Tienes, edad, años)",
-    "print(\"Tienes\" edad, \"años\")"
-   ],
-   "correcta": 0
-  },
-  {
-   "id": "dep5",
-   "tema": "dep",
-   "tipo": "error",
-   "enunciado": "El usuario escribe 5 y el programa imprime 55 en lugar de 10. Toca la línea con el error.",
-   "codigo": "numero = input(\"Dame un número: \")\ndoble = numero * 2\nprint(doble)",
-   "explicacion": "input() siempre regresa texto. \"5\" * 2 repite el texto: \"55\". Hay que convertirlo con int().",
-   "entradas": [
-    "5"
-   ],
-   "linea": 1,
-   "opciones": [
-    "numero = int(input(\"Dame un número: \"))",
-    "numero = input(int(\"Dame un número: \"))",
-    "numero = str(input(\"Dame un número: \"))",
-    "numero = input(\"Dame un número: \") * 1"
-   ],
-   "correcta": 0
-  },
-  {
-   "id": "dep6",
-   "tema": "dep",
-   "tipo": "error",
-   "enunciado": "Debería imprimir el promedio 6.0, pero imprime 2.0. Toca la línea con el error.",
-   "codigo": "suma = 0\nfor n in [4, 8, 6]:\n    suma = n\nprint(\"Promedio:\", suma / 3)",
-   "explicacion": "Es un error lógico: suma = n reemplaza el valor en cada vuelta. El acumulador debe ser suma = suma + n.",
-   "linea": 3,
-   "opciones": [
-    "    suma = suma + n",
-    "    suma = 0",
-    "    n = suma + n",
-    "    suma = n + 1"
-   ],
-   "correcta": 0
-  },
-  {
-   "id": "dep7",
-   "tema": "dep",
-   "tipo": "opcion",
-   "pregunta": "¿Qué error marca este programa?",
-   "codigo": "alumnos = 0\nsuma = 250\nprint(suma / alumnos)",
-   "explicacion": "Se intentó dividir entre cero. Se evita revisando antes con if alumnos > 0.",
-   "opciones": [
-    "ValueError",
-    "ZeroDivisionError",
-    "TypeError",
-    "No marca error: imprime 0"
-   ],
-   "correcta": 1
-  },
-  {
-   "id": "dep8",
-   "tema": "dep",
-   "tipo": "opcion",
-   "pregunta": "¿Qué error marca este programa?",
-   "codigo": "precio = 80\nprint(\"Total: \" + precio)",
-   "explicacion": "No se puede sumar texto con número. Se corrige con comas en print() o con str(precio).",
-   "opciones": [
-    "SyntaxError",
-    "NameError",
-    "TypeError",
-    "ValueError"
-   ],
-   "correcta": 2
-  },
-  {
-   "id": "dep9",
-   "tema": "dep",
-   "tipo": "error",
-   "enunciado": "Este programa marca NameError. Toca la línea con el error.",
-   "codigo": "calif1 = 90\ncalif2 = 80\npromedio = (calif1 + calif2) / 2\nprint(\"Promedio:\", promedios)",
-   "explicacion": "La variable se llama promedio, no promedios. NameError casi siempre es un nombre mal escrito.",
-   "linea": 4,
-   "opciones": [
-    "print(\"Promedio:\", promedio)",
-    "print(\"Promedio:\" promedio)",
-    "print(Promedio, promedios)",
-    "promedios = print(promedio)"
-   ],
-   "correcta": 0
   },
   {
    "id": "for1",
@@ -1718,160 +1572,311 @@
    ]
   },
   {
-   "id": "ret1",
-   "tema": "ret",
-   "tipo": "salida",
-   "codigo": "def suma_pares(lista):\n    total = 0\n    for x in lista:\n        if x % 2 == 0:\n            total = total + x\n    return total\n\nprint(suma_pares([1, 2, 3, 4, 10]))",
-   "explicacion": "Solo suma los pares: 2 + 4 + 10 = 16.",
-   "respuesta": [
-    "16"
-   ]
-  },
-  {
-   "id": "ret2",
-   "tema": "ret",
-   "tipo": "salida",
-   "codigo": "def cuenta(texto, letra):\n    veces = 0\n    for c in texto:\n        if c == letra:\n            veces = veces + 1\n    return veces\n\nprint(cuenta(\"banana\", \"a\"))\nprint(cuenta(\"Mario\", \"m\"))",
-   "explicacion": "«banana» tiene 3 letras a. «Mario» empieza con M mayúscula, que es distinta de m: 0.",
-   "respuesta": [
-    "3",
-    "0"
-   ]
-  },
-  {
-   "id": "ret3",
+   "id": "reto1",
    "tema": "ret",
    "tipo": "programa",
-   "titulo": "¿Es primo?",
-   "descripcion": "Escribe la función es_primo(n) que regrese True si n es primo y False si no. Un primo es mayor que 1 y solo se divide entre 1 y entre sí mismo.",
-   "entrada": "Un entero n (parámetro).",
-   "salida": "True o False (con return).",
-   "inicial": "def es_primo(n):\n    ",
+   "titulo": "Agregar al equipo",
+   "descripcion": "Escribe la función agregar(equipo, nombre) que agregue el nombre al final de la lista solo si todavía no está, y que regrese la lista.",
+   "entrada": "Una lista de nombres y un nombre (parámetros).",
+   "salida": "La lista (con return).",
+   "inicial": "def agregar(equipo, nombre):\n    ",
    "pistas": [
-    "Prueba los divisores de 2 a n - 1 con un for: si alguno divide exacto (n % d == 0), no es primo.",
-    "El return True va DESPUÉS del ciclo, cuando ya revisaste todos. No olvides que 1 no es primo."
+    "Con not in revisas si el nombre todavía no está en la lista.",
+    "Si no está, usa append(nombre). El return equipo va fuera del if."
    ],
    "pruebas": [
     {
      "tipo": "funcion",
-     "funcion": "es_primo",
+     "funcion": "agregar",
      "args": [
-      13
+      [
+       "Mario",
+       "Luigi"
+      ],
+      "Peach"
      ],
-     "esperado": true
+     "esperado": [
+      "Mario",
+      "Luigi",
+      "Peach"
+     ]
     },
     {
      "tipo": "funcion",
-     "funcion": "es_primo",
+     "funcion": "agregar",
      "args": [
-      9
+      [
+       "Mario",
+       "Luigi"
+      ],
+      "Mario"
      ],
-     "esperado": false
+     "esperado": [
+      "Mario",
+      "Luigi"
+     ]
     },
     {
      "tipo": "funcion",
-     "funcion": "es_primo",
+     "funcion": "agregar",
      "args": [
-      2
+      [],
+      "Toad"
      ],
-     "esperado": true
-    },
-    {
-     "tipo": "funcion",
-     "funcion": "es_primo",
-     "args": [
-      1
-     ],
-     "esperado": false
-    },
-    {
-     "tipo": "funcion",
-     "funcion": "es_primo",
-     "args": [
-      25
-     ],
-     "esperado": false
-    },
-    {
-     "tipo": "funcion",
-     "funcion": "es_primo",
-     "args": [
-      97
-     ],
-     "esperado": true
+     "esperado": [
+      "Toad"
+     ]
     }
    ],
    "ejemplo_llamadas": [
     {
-     "llamada": "es_primo(13)",
-     "resultado": "True"
+     "llamada": "agregar([\"Mario\", \"Luigi\"], \"Peach\")",
+     "resultado": "['Mario', 'Luigi', 'Peach']"
     },
     {
-     "llamada": "es_primo(9)",
-     "resultado": "False"
+     "llamada": "agregar([\"Mario\", \"Luigi\"], \"Mario\")",
+     "resultado": "['Mario', 'Luigi']"
     }
    ]
   },
   {
-   "id": "ret4",
+   "id": "reto2",
    "tema": "ret",
    "tipo": "programa",
-   "titulo": "Vocales",
-   "descripcion": "Escribe la función contar_vocales(texto) que regrese cuántas vocales tiene el texto, sin importar mayúsculas o minúsculas (sin acentos).",
-   "entrada": "Un texto (parámetro).",
-   "salida": "Cuántas vocales tiene (con return).",
-   "inicial": "def contar_vocales(texto):\n    ",
+   "titulo": "Buscar un nombre",
+   "descripcion": "Escribe la función buscar(nombres, nombre) que regrese la posición donde está el nombre en la lista, o -1 si no está. Resuélvelo con un ciclo, sin usar index().",
+   "entrada": "Una lista de nombres y el nombre a buscar (parámetros).",
+   "salida": "La posición o -1 (con return).",
+   "usa": "for con range(len(nombres))",
+   "inicial": "def buscar(nombres, nombre):\n    ",
    "pistas": [
-    "Recorre el texto letra por letra con un for.",
-    "if letra in \"aeiouAEIOU\" revisa mayúsculas y minúsculas a la vez."
+    "Recorre por índice: for i in range(len(nombres)). Si nombres[i] == nombre, regresa i.",
+    "El return -1 va DESPUÉS del ciclo: solo se llega ahí si no lo encontró."
+   ],
+   "prohibido": [
+    {
+     "texto": ".index(",
+     "mensaje": "Resuélvelo sin index(): recorre la lista por índice."
+    }
    ],
    "pruebas": [
     {
      "tipo": "funcion",
-     "funcion": "contar_vocales",
+     "funcion": "buscar",
      "args": [
-      "programacion"
+      [
+       "Mario",
+       "Luigi",
+       "Peach"
+      ],
+      "Peach"
      ],
-     "esperado": 5
+     "esperado": 2
     },
     {
      "tipo": "funcion",
-     "funcion": "contar_vocales",
+     "funcion": "buscar",
      "args": [
-      "Python"
-     ],
-     "esperado": 1
-    },
-    {
-     "tipo": "funcion",
-     "funcion": "contar_vocales",
-     "args": [
-      "AEIOU"
-     ],
-     "esperado": 5
-    },
-    {
-     "tipo": "funcion",
-     "funcion": "contar_vocales",
-     "args": [
-      "xyz"
+      [
+       "Mario",
+       "Luigi",
+       "Peach"
+      ],
+      "Mario"
      ],
      "esperado": 0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "buscar",
+     "args": [
+      [
+       "Mario",
+       "Luigi",
+       "Peach"
+      ],
+      "Bowser"
+     ],
+     "esperado": -1
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "buscar",
+     "args": [
+      [],
+      "Toad"
+     ],
+     "esperado": -1
     }
    ],
    "ejemplo_llamadas": [
     {
-     "llamada": "contar_vocales(\"Python\")",
-     "resultado": "1"
+     "llamada": "buscar([\"Mario\", \"Luigi\", \"Peach\"], \"Peach\")",
+     "resultado": "2"
     },
     {
-     "llamada": "contar_vocales(\"AEIOU\")",
-     "resultado": "5"
+     "llamada": "buscar([\"Mario\", \"Luigi\", \"Peach\"], \"Bowser\")",
+     "resultado": "-1"
     }
    ]
   },
   {
-   "id": "ret5",
+   "id": "reto3",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "Promedio del grupo",
+   "descripcion": "Pide cuántos alumnos son y luego la calificación de cada uno; guárdalas en una lista. Al final imprime el promedio del grupo y cuántos alumnos quedaron arriba del promedio.",
+   "entrada": "El número de alumnos y una calificación por alumno.",
+   "salida": [
+    "El promedio",
+    "Cuántos quedaron arriba del promedio"
+   ],
+   "usa": "una lista, append(), sum() y len()",
+   "pistas": [
+    "Primero arma la lista: vacía antes del for y append() dentro.",
+    "Con la lista completa calcula el promedio; después recórrela otra vez para contar los que son mayores."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "4",
+      "90",
+      "80",
+      "70",
+      "100"
+     ],
+     "contiene": [
+      85,
+      2
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "3",
+      "100",
+      "100",
+      "100"
+     ],
+     "contiene": [
+      100,
+      0
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "2",
+      "60",
+      "91"
+     ],
+     "contiene": [
+      75.5,
+      1
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "4",
+     "90",
+     "80",
+     "70",
+     "100"
+    ],
+    "salida": [
+     "Promedio: 85.0",
+     "Arriba del promedio: 2"
+    ]
+   }
+  },
+  {
+   "id": "reto4",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "¿Quién ganó?",
+   "descripcion": "Escribe la función ganador(nombres, puntos) que reciba dos listas paralelas y regrese el nombre de quien tiene más puntos. Si hay empate, gana el primero.",
+   "entrada": "Una lista de nombres y una de puntos (parámetros).",
+   "salida": "El nombre del ganador (con return).",
+   "inicial": "def ganador(nombres, puntos):\n    ",
+   "pistas": [
+    "Guarda la POSICIÓN del mejor (empieza en 0), no los puntos.",
+    "Recorre por índice; si puntos[i] > puntos[mejor], cambia mejor = i. Al final regresa nombres[mejor]."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "ganador",
+     "args": [
+      [
+       "Mario",
+       "Luigi",
+       "Peach"
+      ],
+      [
+       30,
+       45,
+       20
+      ]
+     ],
+     "esperado": "Luigi"
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "ganador",
+     "args": [
+      [
+       "Mario",
+       "Luigi",
+       "Peach"
+      ],
+      [
+       50,
+       45,
+       20
+      ]
+     ],
+     "esperado": "Mario"
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "ganador",
+     "args": [
+      [
+       "Toad",
+       "Yoshi"
+      ],
+      [
+       10,
+       10
+      ]
+     ],
+     "esperado": "Toad"
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "ganador",
+     "args": [
+      [
+       "Bowser"
+      ],
+      [
+       99
+      ]
+     ],
+     "esperado": "Bowser"
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "ganador([\"Mario\", \"Luigi\", \"Peach\"], [30, 45, 20])",
+     "resultado": "'Luigi'"
+    }
+   ]
+  },
+  {
+   "id": "reto5",
    "tema": "ret",
    "tipo": "programa",
    "titulo": "Solo aprobados",
@@ -1932,154 +1937,6 @@
      "resultado": "[90, 70, 100]"
     }
    ]
-  },
-  {
-   "id": "ret6",
-   "tema": "ret",
-   "tipo": "programa",
-   "titulo": "FizzBuzz",
-   "descripcion": "Pide un entero n e imprime los números del 1 al n, uno por renglón. Si es múltiplo de 3 imprime Fizz; si es múltiplo de 5, Buzz; si es de ambos, FizzBuzz.",
-   "entrada": "Un entero n.",
-   "salida": "n renglones.",
-   "usa": "for con if / elif / else",
-   "pistas": [
-    "El orden de las condiciones importa: ¿qué pasa con el 15 si revisas primero el 3?",
-    "Revisa primero i % 3 == 0 and i % 5 == 0 (o i % 15 == 0)."
-   ],
-   "pruebas": [
-    {
-     "tipo": "programa",
-     "entradas": [
-      "15"
-     ],
-     "salida": [
-      "1",
-      "2",
-      "Fizz",
-      "4",
-      "Buzz",
-      "Fizz",
-      "7",
-      "8",
-      "Fizz",
-      "Buzz",
-      "11",
-      "Fizz",
-      "13",
-      "14",
-      "FizzBuzz"
-     ]
-    },
-    {
-     "tipo": "programa",
-     "entradas": [
-      "5"
-     ],
-     "salida": [
-      "1",
-      "2",
-      "Fizz",
-      "4",
-      "Buzz"
-     ]
-    },
-    {
-     "tipo": "programa",
-     "entradas": [
-      "2"
-     ],
-     "salida": [
-      "1",
-      "2"
-     ]
-    }
-   ],
-   "ejemplo": {
-    "entradas": [
-     "15"
-    ],
-    "salida": [
-     "1",
-     "2",
-     "Fizz",
-     "4",
-     "Buzz",
-     "Fizz",
-     "7",
-     "8",
-     "Fizz",
-     "Buzz",
-     "11",
-     "Fizz",
-     "13",
-     "14",
-     "FizzBuzz"
-    ]
-   }
-  },
-  {
-   "id": "ret7",
-   "tema": "ret",
-   "tipo": "programa",
-   "titulo": "Edad válida",
-   "descripcion": "Pide la edad hasta que esté entre 0 y 120. Cada vez que no sea válida imprime Edad inválida. Al final imprime Edad registrada: y la edad.",
-   "entrada": "Edades enteras, hasta que una sea válida.",
-   "salida": [
-    "Edad inválida (por cada dato malo)",
-    "Edad registrada: <edad>"
-   ],
-   "usa": "while para validar",
-   "pistas": [
-    "La condición del while describe el dato inválido: edad < 0 or edad > 120.",
-    "Dentro del ciclo imprime el aviso y vuelve a pedir la edad."
-   ],
-   "pruebas": [
-    {
-     "tipo": "programa",
-     "entradas": [
-      "-5",
-      "150",
-      "20"
-     ],
-     "salida": [
-      "Edad inválida",
-      "Edad inválida",
-      "Edad registrada: 20"
-     ]
-    },
-    {
-     "tipo": "programa",
-     "entradas": [
-      "0"
-     ],
-     "salida": [
-      "Edad registrada: 0"
-     ]
-    },
-    {
-     "tipo": "programa",
-     "entradas": [
-      "121",
-      "120"
-     ],
-     "salida": [
-      "Edad inválida",
-      "Edad registrada: 120"
-     ]
-    }
-   ],
-   "ejemplo": {
-    "entradas": [
-     "-5",
-     "150",
-     "20"
-    ],
-    "salida": [
-     "Edad inválida",
-     "Edad inválida",
-     "Edad registrada: 20"
-    ]
-   }
   }
  ]
 }

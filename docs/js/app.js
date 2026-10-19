@@ -130,7 +130,7 @@ function resuelto(ejercicio) {
 }
 
 function puntosTotales() {
-  return Object.values(estado.hechos).reduce((suma, p) => suma + p, 0);
+  return datos.ejercicios.reduce((suma, e) => suma + (estado.hechos[e.id] || 0), 0);
 }
 
 function puntosPosibles() {
@@ -1007,7 +1007,7 @@ function vistaInicio() {
       "div",
       { class: "encabezado" },
       el("h1", {}, "Repaso de Python"),
-      el("p", { class: "texto-suave" }, "Funciones, depuración, ciclos y listas. Todo se resuelve aquí."),
+      el("p", { class: "texto-suave" }, "Funciones, ciclos y listas. Todo se resuelve aquí."),
     ),
     el(
       "div",
