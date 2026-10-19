@@ -1,0 +1,2085 @@
+{
+ "temas": [
+  {
+   "id": "fun",
+   "nombre": "Funciones",
+   "detalle": "def, parámetros y return"
+  },
+  {
+   "id": "dep",
+   "nombre": "Depuración",
+   "detalle": "Tipos de error y cómo leerlos"
+  },
+  {
+   "id": "for",
+   "nombre": "Ciclo for",
+   "detalle": "range, acumulador y contador"
+  },
+  {
+   "id": "while",
+   "nombre": "Ciclo while",
+   "detalle": "Condición, centinela y validación"
+  },
+  {
+   "id": "anid",
+   "nombre": "Ciclos anidados",
+   "detalle": "Un ciclo dentro de otro"
+  },
+  {
+   "id": "lis",
+   "nombre": "Listas",
+   "detalle": "Índices, métodos y recorridos"
+  },
+  {
+   "id": "ret",
+   "nombre": "Retos",
+   "detalle": "Todo junto, programas cortos"
+  }
+ ],
+ "tipos": {
+  "opcion": {
+   "nombre": "Opción múltiple",
+   "puntos": 1
+  },
+  "salida": {
+   "nombre": "¿Qué imprime?",
+   "puntos": 2
+  },
+  "completar": {
+   "nombre": "Completa el código",
+   "puntos": 2
+  },
+  "error": {
+   "nombre": "Encuentra el error",
+   "puntos": 2
+  },
+  "traza": {
+   "nombre": "Prueba de escritorio",
+   "puntos": 3
+  },
+  "ordenar": {
+   "nombre": "Ordena el programa",
+   "puntos": 3
+  },
+  "programa": {
+   "nombre": "Programa",
+   "puntos": 4
+  }
+ },
+ "simulacro": {
+  "minutos": 20,
+  "por_tema": 2,
+  "programas": 1,
+  "sin_tema": [
+   "ret"
+  ]
+ },
+ "ejercicios": [
+  {
+   "id": "fun1",
+   "tema": "fun",
+   "tipo": "opcion",
+   "pregunta": "¿Qué regresa una función que no tiene return?",
+   "explicacion": "Si una función termina sin return, Python regresa None automáticamente.",
+   "opciones": [
+    "0",
+    "Un texto vacío \"\"",
+    "None",
+    "Marca un error"
+   ],
+   "correcta": 2
+  },
+  {
+   "id": "fun2",
+   "tema": "fun",
+   "tipo": "opcion",
+   "pregunta": "¿Qué imprime este programa?",
+   "codigo": "def saluda():\n    print(\"Hola\")\n\nprint(\"Inicio\")",
+   "explicacion": "Definir una función no la ejecuta. Como nunca se llama saluda(), solo se imprime «Inicio».",
+   "opciones": [
+    "Hola\nInicio",
+    "Inicio",
+    "Inicio\nHola",
+    "Nada"
+   ],
+   "correcta": 1,
+   "codigo_opciones": true
+  },
+  {
+   "id": "fun3",
+   "tema": "fun",
+   "tipo": "salida",
+   "codigo": "def doble(n):\n    print(n * 2)\n\nx = doble(4)\nprint(x)",
+   "explicacion": "doble() imprime 8 pero no tiene return, así que regresa None y eso es lo que guarda x.",
+   "respuesta": [
+    "8",
+    "None"
+   ]
+  },
+  {
+   "id": "fun4",
+   "tema": "fun",
+   "tipo": "salida",
+   "codigo": "def puntos(monedas, extra=10):\n    return monedas * 2 + extra\n\nprint(puntos(5))\nprint(puntos(5, 0))\nprint(puntos(extra=1, monedas=3))",
+   "explicacion": "Si no se manda extra, vale 10. En la última llamada los argumentos van por nombre: monedas=3 y extra=1.",
+   "respuesta": [
+    "20",
+    "10",
+    "7"
+   ]
+  },
+  {
+   "id": "fun5",
+   "tema": "fun",
+   "tipo": "completar",
+   "enunciado": "Completa la función para que regrese el área del rectángulo.",
+   "explicacion": "Las funciones se declaran con def y entregan su resultado con return para poder guardarlo en a.",
+   "partes": [
+    "",
+    [
+     "def"
+    ],
+    " area_rectangulo(base, altura):\n    ",
+    [
+     "return"
+    ],
+    " base * altura\n\na = area_rectangulo(5, 3)\nprint(\"El área es:\", a)"
+   ],
+   "salida": [
+    "El área es: 15"
+   ]
+  },
+  {
+   "id": "fun6",
+   "tema": "fun",
+   "tipo": "error",
+   "enunciado": "El programa se detiene con TypeError. Toca la línea que causa el problema.",
+   "codigo": "def promedio(a, b, c):\n    resultado = (a + b + c) / 3\n    print(resultado)\n\np = promedio(8, 9, 10)\nif p >= 7:\n    print(\"Aprobado\")",
+   "explicacion": "La función imprime el promedio pero no lo regresa: p vale None y None >= 7 marca TypeError. Debe usar return.",
+   "linea": 3,
+   "opciones": [
+    "    return resultado",
+    "    print(p)",
+    "    resultado = promedio",
+    "    return print(resultado)"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "fun7",
+   "tema": "fun",
+   "tipo": "opcion",
+   "pregunta": "¿Qué pasa con las líneas que están después de un return dentro de la función?",
+   "explicacion": "return entrega el resultado y termina la función de inmediato.",
+   "opciones": [
+    "Se ejecutan al final",
+    "No se ejecutan: la función termina en el return",
+    "Se ejecutan solo si hay print",
+    "Marcan SyntaxError"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "fun8",
+   "tema": "fun",
+   "tipo": "ordenar",
+   "enunciado": "Arma la función que dice si una calificación aprueba (70 o más) y llámala con 85.",
+   "explicacion": "La función regresa el texto con return y el programa principal es el que imprime.",
+   "lineas": [
+    "def estado(calif):",
+    "    if calif >= 70:",
+    "        return \"Aprobado\"",
+    "    else:",
+    "        return \"Reprobado\"",
+    "print(estado(85))"
+   ],
+   "grupos": [],
+   "distractores": [
+    "        print(\"Aprobado\")"
+   ],
+   "salida": [
+    "Aprobado"
+   ]
+  },
+  {
+   "id": "fun9",
+   "tema": "fun",
+   "tipo": "programa",
+   "titulo": "¿Es par?",
+   "descripcion": "Escribe la función es_par(n) que regrese True si n es par y False si no.",
+   "entrada": "Un entero n (parámetro).",
+   "salida": "True o False (con return).",
+   "inicial": "def es_par(n):\n    ",
+   "pistas": [
+    "Un número es par si el residuo de dividirlo entre 2 es 0.",
+    "return n % 2 == 0 ya regresa True o False."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "es_par",
+     "args": [
+      4
+     ],
+     "esperado": true
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_par",
+     "args": [
+      7
+     ],
+     "esperado": false
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_par",
+     "args": [
+      0
+     ],
+     "esperado": true
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_par",
+     "args": [
+      -3
+     ],
+     "esperado": false
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "es_par(4)",
+     "resultado": "True"
+    },
+    {
+     "llamada": "es_par(7)",
+     "resultado": "False"
+    }
+   ]
+  },
+  {
+   "id": "fun10",
+   "tema": "fun",
+   "tipo": "programa",
+   "titulo": "Precio con descuento",
+   "descripcion": "Escribe la función precio_final(precio, descuento) que regrese el precio ya con el descuento aplicado. El descuento viene en porcentaje.",
+   "entrada": "precio y descuento (parámetros).",
+   "salida": "El precio a pagar (con return).",
+   "inicial": "def precio_final(precio, descuento):\n    ",
+   "pistas": [
+    "El descuento en pesos es precio * descuento / 100.",
+    "Regresa precio menos el descuento en pesos."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "precio_final",
+     "args": [
+      200,
+      15
+     ],
+     "esperado": 170.0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "precio_final",
+     "args": [
+      80,
+      50
+     ],
+     "esperado": 40.0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "precio_final",
+     "args": [
+      99.5,
+      0
+     ],
+     "esperado": 99.5
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "precio_final",
+     "args": [
+      1000,
+      100
+     ],
+     "esperado": 0.0
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "precio_final(200, 15)",
+     "resultado": "170.0"
+    },
+    {
+     "llamada": "precio_final(80, 50)",
+     "resultado": "40.0"
+    }
+   ]
+  },
+  {
+   "id": "dep1",
+   "tema": "dep",
+   "tipo": "opcion",
+   "pregunta": "Un programa corre sin marcar error, pero el promedio que calcula está mal. ¿Qué tipo de error es?",
+   "explicacion": "Los errores lógicos no los detecta Python: solo aparecen si pruebas el programa y revisas el resultado.",
+   "opciones": [
+    "De sintaxis",
+    "De ejecución (excepción)",
+    "Lógico",
+    "IndentationError"
+   ],
+   "correcta": 2
+  },
+  {
+   "id": "dep2",
+   "tema": "dep",
+   "tipo": "opcion",
+   "pregunta": "¿Qué error marca esta línea?",
+   "codigo": "telefono = int(\"222-222-2222\")",
+   "explicacion": "El dato es un texto (tipo correcto para int()), pero su contenido no se puede convertir a número: ValueError.",
+   "opciones": [
+    "SyntaxError",
+    "ValueError",
+    "TypeError",
+    "NameError"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "dep3",
+   "tema": "dep",
+   "tipo": "opcion",
+   "pregunta": "Lee el traceback. ¿Qué pasó y en qué línea?",
+   "codigo": "Traceback (most recent call last):\n  File \"saludo.py\", line 2, in <module>\n    print(texto)\nNameError: name 'texto' is not defined",
+   "explicacion": "La última línea dice el tipo (NameError) y la anterior el lugar (line 2): texto no se creó o se escribió distinto.",
+   "opciones": [
+    "Línea 1: falta un paréntesis",
+    "Línea 2: se usa una variable que no existe (o está mal escrita)",
+    "Línea 2: se dividió entre cero",
+    "Línea 3: la sangría está mal"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "dep4",
+   "tema": "dep",
+   "tipo": "error",
+   "enunciado": "Este programa marca SyntaxError. Toca la línea con el error.",
+   "codigo": "edad = 18\nprint(\"Tienes\" edad \"años\")",
+   "explicacion": "En print() los valores se separan con comas. Con + marcaría TypeError, porque edad es un número.",
+   "linea": 2,
+   "opciones": [
+    "print(\"Tienes\", edad, \"años\")",
+    "print(\"Tienes\" + edad + \"años\")",
+    "print(Tienes, edad, años)",
+    "print(\"Tienes\" edad, \"años\")"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "dep5",
+   "tema": "dep",
+   "tipo": "error",
+   "enunciado": "El usuario escribe 5 y el programa imprime 55 en lugar de 10. Toca la línea con el error.",
+   "codigo": "numero = input(\"Dame un número: \")\ndoble = numero * 2\nprint(doble)",
+   "explicacion": "input() siempre regresa texto. \"5\" * 2 repite el texto: \"55\". Hay que convertirlo con int().",
+   "entradas": [
+    "5"
+   ],
+   "linea": 1,
+   "opciones": [
+    "numero = int(input(\"Dame un número: \"))",
+    "numero = input(int(\"Dame un número: \"))",
+    "numero = str(input(\"Dame un número: \"))",
+    "numero = input(\"Dame un número: \") * 1"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "dep6",
+   "tema": "dep",
+   "tipo": "error",
+   "enunciado": "Debería imprimir el promedio 6.0, pero imprime 2.0. Toca la línea con el error.",
+   "codigo": "suma = 0\nfor n in [4, 8, 6]:\n    suma = n\nprint(\"Promedio:\", suma / 3)",
+   "explicacion": "Es un error lógico: suma = n reemplaza el valor en cada vuelta. El acumulador debe ser suma = suma + n.",
+   "linea": 3,
+   "opciones": [
+    "    suma = suma + n",
+    "    suma = 0",
+    "    n = suma + n",
+    "    suma = n + 1"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "dep7",
+   "tema": "dep",
+   "tipo": "opcion",
+   "pregunta": "¿Qué error marca este programa?",
+   "codigo": "alumnos = 0\nsuma = 250\nprint(suma / alumnos)",
+   "explicacion": "Se intentó dividir entre cero. Se evita revisando antes con if alumnos > 0.",
+   "opciones": [
+    "ValueError",
+    "ZeroDivisionError",
+    "TypeError",
+    "No marca error: imprime 0"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "dep8",
+   "tema": "dep",
+   "tipo": "opcion",
+   "pregunta": "¿Qué error marca este programa?",
+   "codigo": "precio = 80\nprint(\"Total: \" + precio)",
+   "explicacion": "No se puede sumar texto con número. Se corrige con comas en print() o con str(precio).",
+   "opciones": [
+    "SyntaxError",
+    "NameError",
+    "TypeError",
+    "ValueError"
+   ],
+   "correcta": 2
+  },
+  {
+   "id": "dep9",
+   "tema": "dep",
+   "tipo": "error",
+   "enunciado": "Este programa marca NameError. Toca la línea con el error.",
+   "codigo": "calif1 = 90\ncalif2 = 80\npromedio = (calif1 + calif2) / 2\nprint(\"Promedio:\", promedios)",
+   "explicacion": "La variable se llama promedio, no promedios. NameError casi siempre es un nombre mal escrito.",
+   "linea": 4,
+   "opciones": [
+    "print(\"Promedio:\", promedio)",
+    "print(\"Promedio:\" promedio)",
+    "print(Promedio, promedios)",
+    "promedios = print(promedio)"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "for1",
+   "tema": "for",
+   "tipo": "opcion",
+   "pregunta": "¿Qué valores genera range(1, 6)?",
+   "explicacion": "range empieza en el inicio y se detiene ANTES del fin: el 6 no se incluye.",
+   "opciones": [
+    "0, 1, 2, 3, 4, 5",
+    "1, 2, 3, 4, 5",
+    "1, 2, 3, 4, 5, 6",
+    "1, 6"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "for2",
+   "tema": "for",
+   "tipo": "salida",
+   "codigo": "for i in range(2, 9, 3):\n    print(i)\nprint(\"Fin\")",
+   "explicacion": "Empieza en 2 y avanza de 3 en 3: 2, 5, 8. El 11 ya se pasa del 9. «Fin» está fuera del ciclo: sale una vez.",
+   "respuesta": [
+    "2",
+    "5",
+    "8",
+    "Fin"
+   ]
+  },
+  {
+   "id": "for3",
+   "tema": "for",
+   "tipo": "salida",
+   "codigo": "for i in range(10, 0, -3):\n    print(i)",
+   "explicacion": "Con paso negativo va hacia atrás: 10, 7, 4, 1. El siguiente sería -2, que ya pasó el 0.",
+   "respuesta": [
+    "10",
+    "7",
+    "4",
+    "1"
+   ]
+  },
+  {
+   "id": "for4",
+   "tema": "for",
+   "tipo": "salida",
+   "codigo": "total = 0\nfor x in [3, 1, 4]:\n    total = total + x\n    print(total)",
+   "explicacion": "El print está DENTRO del ciclo, así que se imprime el total en cada vuelta: 3, 4 y 8.",
+   "respuesta": [
+    "3",
+    "4",
+    "8"
+   ]
+  },
+  {
+   "id": "for5",
+   "tema": "for",
+   "tipo": "traza",
+   "enunciado": "Llena la prueba de escritorio: los valores al terminar cada vuelta.",
+   "codigo": "producto = 1\nfor i in range(1, 5):\n    producto = producto * i\nprint(producto)",
+   "explicacion": "Es un acumulador que multiplica: empieza en 1 (no en 0, o todo daría 0). Al final imprime 24.",
+   "columnas": [
+    "Vuelta",
+    "i",
+    "producto"
+   ],
+   "filas": [
+    [
+     "1",
+     "1",
+     "?1"
+    ],
+    [
+     "2",
+     "?2",
+     "?2"
+    ],
+    [
+     "3",
+     "?3",
+     "?6"
+    ],
+    [
+     "4",
+     "?4",
+     "?24"
+    ]
+   ]
+  },
+  {
+   "id": "for6",
+   "tema": "for",
+   "tipo": "completar",
+   "enunciado": "Completa el programa que imprime la tabla de multiplicar del 1 al 10 del número que da el usuario.",
+   "explicacion": "range(1, 11) genera del 1 al 10: el fin no se incluye.",
+   "entradas": [
+    "7"
+   ],
+   "partes": [
+    "n = int(input(\"¿Qué tabla quieres? \"))\nfor i in range(",
+    [
+     "1"
+    ],
+    ", ",
+    [
+     "11"
+    ],
+    "):\n    print(n, \"x\", i, \"=\", ",
+    [
+     "n * i",
+     "i * n"
+    ],
+    ")"
+   ],
+   "salida": [
+    "7 x 1 = 7",
+    "7 x 2 = 14",
+    "7 x 3 = 21",
+    "7 x 4 = 28",
+    "7 x 5 = 35",
+    "7 x 6 = 42",
+    "7 x 7 = 49",
+    "7 x 8 = 56",
+    "7 x 9 = 63",
+    "7 x 10 = 70"
+   ]
+  },
+  {
+   "id": "for7",
+   "tema": "for",
+   "tipo": "completar",
+   "enunciado": "Completa el programa que cuenta las vocales de una palabra.",
+   "explicacion": "Patrón contador: empieza en 0 antes del ciclo y sube de 1 en 1 cuando la letra es vocal. El for recorre el texto letra por letra.",
+   "partes": [
+    "palabra = \"programacion\"\nvocales = ",
+    [
+     "0"
+    ],
+    "\nfor letra in ",
+    [
+     "palabra"
+    ],
+    ":\n    if letra in \"aeiou\":\n        vocales = ",
+    [
+     "vocales + 1",
+     "1 + vocales"
+    ],
+    "\nprint(vocales)"
+   ],
+   "salida": [
+    "5"
+   ]
+  },
+  {
+   "id": "for8",
+   "tema": "for",
+   "tipo": "ordenar",
+   "enunciado": "Arma el programa que suma los números pares del 2 hasta n.",
+   "explicacion": "Para incluir a n se usa range(2, n + 1, 2). El acumulador se inicializa antes del for y se imprime después.",
+   "entradas": [
+    "10"
+   ],
+   "lineas": [
+    "n = int(input(\"n: \"))",
+    "suma = 0",
+    "for i in range(2, n + 1, 2):",
+    "    suma = suma + i",
+    "print(suma)"
+   ],
+   "grupos": [
+    [
+     0,
+     1
+    ]
+   ],
+   "distractores": [
+    "for i in range(2, n, 2):"
+   ],
+   "salida": [
+    "30"
+   ]
+  },
+  {
+   "id": "for9",
+   "tema": "for",
+   "tipo": "opcion",
+   "pregunta": "¿Qué pasa con este código?",
+   "codigo": "for i in 5:\n    print(i)",
+   "explicacion": "El for necesita algo que se pueda recorrer: un range(), un texto o una lista. Se corrige con range(5).",
+   "opciones": [
+    "Imprime del 0 al 4",
+    "Imprime del 1 al 5",
+    "Marca TypeError: un entero no es una secuencia",
+    "Imprime 5"
+   ],
+   "correcta": 2
+  },
+  {
+   "id": "for10",
+   "tema": "for",
+   "tipo": "programa",
+   "titulo": "Cuenta regresiva",
+   "descripcion": "Pide un entero n e imprime una cuenta regresiva de n a 1, un número por renglón. Al final imprime ¡Despegue!",
+   "entrada": "Un entero n.",
+   "salida": [
+    "n, n-1, …, 1 (un renglón cada uno)",
+    "¡Despegue!"
+   ],
+   "usa": "for y range()",
+   "pistas": [
+    "Con paso -1 el range va hacia atrás: range(n, 0, -1).",
+    "El mensaje va fuera del ciclo (sin sangría) para que salga una sola vez."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "3"
+     ],
+     "salida": [
+      "3",
+      "2",
+      "1",
+      "¡Despegue!"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "5"
+     ],
+     "salida": [
+      "5",
+      "4",
+      "3",
+      "2",
+      "1",
+      "¡Despegue!"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "1"
+     ],
+     "salida": [
+      "1",
+      "¡Despegue!"
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "3"
+    ],
+    "salida": [
+     "3",
+     "2",
+     "1",
+     "¡Despegue!"
+    ]
+   }
+  },
+  {
+   "id": "for11",
+   "tema": "for",
+   "tipo": "programa",
+   "titulo": "Aprobados",
+   "descripcion": "Pide 5 calificaciones y al final imprime cuántas son aprobatorias (70 o más).",
+   "entrada": "5 calificaciones, una por una.",
+   "salida": "Solo el número de aprobados.",
+   "usa": "for con un contador",
+   "pistas": [
+    "Inicializa aprobados = 0 antes del ciclo.",
+    "Dentro del for: pide la calificación y, si es >= 70, suma 1. El print va después del ciclo."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "90",
+      "65",
+      "70",
+      "100",
+      "40"
+     ],
+     "salida": [
+      "3"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "10",
+      "20",
+      "30",
+      "40",
+      "50"
+     ],
+     "salida": [
+      "0"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "70",
+      "80",
+      "90",
+      "100",
+      "75.5"
+     ],
+     "salida": [
+      "5"
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "90",
+     "65",
+     "70",
+     "100",
+     "40"
+    ],
+    "salida": [
+     "3"
+    ]
+   }
+  },
+  {
+   "id": "while1",
+   "tema": "while",
+   "tipo": "opcion",
+   "pregunta": "¿Cuál de estos casos se resuelve mejor con while que con for?",
+   "explicacion": "No sabemos cuántas veces se equivocará el usuario. «Hasta que…» es la frase clave del while.",
+   "opciones": [
+    "Imprimir la tabla del 7",
+    "Pedir 5 calificaciones",
+    "Pedir la contraseña hasta que sea correcta",
+    "Recorrer cada letra de un texto"
+   ],
+   "correcta": 2
+  },
+  {
+   "id": "while2",
+   "tema": "while",
+   "tipo": "salida",
+   "codigo": "i = 1\nwhile i < 20:\n    i = i * 3\nprint(i)",
+   "explicacion": "i vale 1, 3, 9 y 27. Con 27 la condición 27 < 20 es False y sale. Solo se imprime al final.",
+   "respuesta": [
+    "27"
+   ]
+  },
+  {
+   "id": "while3",
+   "tema": "while",
+   "tipo": "salida",
+   "codigo": "n = 10\nwhile n > 0:\n    print(n)\n    n = n - 4",
+   "explicacion": "Imprime 10, 6 y 2. Después n vale -2 y la condición es False.",
+   "respuesta": [
+    "10",
+    "6",
+    "2"
+   ]
+  },
+  {
+   "id": "while4",
+   "tema": "while",
+   "tipo": "opcion",
+   "pregunta": "¿Cuál de estos ciclos NO termina nunca?",
+   "explicacion": "i vale 1, 3, 5, 7, 9, 11…: nunca es exactamente 10. Con i < 10 sí terminaría.",
+   "opciones": [
+    "i = 1\nwhile i < 10:\n    i = i + 2",
+    "i = 1\nwhile i != 10:\n    i = i + 2",
+    "i = 10\nwhile i > 0:\n    i = i - 2",
+    "i = 0\nwhile i <= 10:\n    i = i + 2"
+   ],
+   "correcta": 1,
+   "codigo_opciones": true
+  },
+  {
+   "id": "while5",
+   "tema": "while",
+   "tipo": "salida",
+   "codigo": "suma = 0\ncuantas = 0\ncalif = int(input())\nwhile calif != -1:\n    suma = suma + calif\n    cuantas = cuantas + 1\n    calif = int(input())\nprint(suma, cuantas)",
+   "explicacion": "-1 es el centinela: avisa que ya no hay datos y no se suma. suma es acumulador y cuantas es contador.",
+   "entradas": [
+    "90",
+    "80",
+    "100",
+    "-1"
+   ],
+   "respuesta": [
+    "270 3"
+   ]
+  },
+  {
+   "id": "while6",
+   "tema": "while",
+   "tipo": "traza",
+   "enunciado": "Llena los valores cada vez que se revisa la condición del while.",
+   "codigo": "ahorro = 0\ndeposito = 30\nwhile ahorro < 100:\n    ahorro = ahorro + deposito\n    deposito = deposito + 10\nprint(ahorro)",
+   "explicacion": "La condición se revisa 4 veces, pero el bloque solo corre 3: la última revisión (120 < 100 es False) saca al programa del ciclo.",
+   "columnas": [
+    "Revisión",
+    "ahorro",
+    "deposito",
+    "¿ahorro < 100?"
+   ],
+   "filas": [
+    [
+     "1",
+     "0",
+     "30",
+     "?True"
+    ],
+    [
+     "2",
+     "?30",
+     "?40",
+     "?True"
+    ],
+    [
+     "3",
+     "?70",
+     "?50",
+     "?True"
+    ],
+    [
+     "4",
+     "?120",
+     "?60",
+     "?False"
+    ]
+   ]
+  },
+  {
+   "id": "while7",
+   "tema": "while",
+   "tipo": "completar",
+   "enunciado": "Completa la validación: debe volver a pedir la calificación mientras no esté entre 0 y 100.",
+   "explicacion": "La condición describe el dato INVÁLIDO: menor que 0 o mayor que 100. Dentro del ciclo se vuelve a pedir, si no sería infinito.",
+   "entradas": [
+    "150",
+    "-5",
+    "85"
+   ],
+   "partes": [
+    "calif = float(input(\"Calificación (0-100): \"))\nwhile calif ",
+    [
+     "<"
+    ],
+    " 0 ",
+    [
+     "or"
+    ],
+    " calif > 100:\n    print(\"Dato inválido.\")\n    calif = ",
+    [
+     "float"
+    ],
+    "(input(\"Calificación (0-100): \"))\nprint(\"Registrada:\", calif)"
+   ],
+   "salida": [
+    "Dato inválido.",
+    "Dato inválido.",
+    "Registrada: 85.0"
+   ]
+  },
+  {
+   "id": "while8",
+   "tema": "while",
+   "tipo": "error",
+   "enunciado": "Debería contar del 10 al 1, pero nunca termina. Toca la línea con el error.",
+   "codigo": "i = 10\nwhile i > 0:\n    print(i)\n    i = i + 1\nprint(\"¡Despegue!\")",
+   "explicacion": "i crece y se aleja del 0, así que i > 0 siempre es True. Hay que restar, y la línea debe quedar dentro del ciclo.",
+   "linea": 4,
+   "opciones": [
+    "    i = i - 1",
+    "    i = 0",
+    "    i = i + 10",
+    "i = i - 1"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "while9",
+   "tema": "while",
+   "tipo": "ordenar",
+   "enunciado": "Arma el programa: pide la contraseña hasta que sea «python» y al final dice cuántas veces falló.",
+   "explicacion": "Se pide la clave antes del ciclo para poder revisar la condición, y otra vez dentro para que pueda cambiar.",
+   "entradas": [
+    "hola",
+    "1234",
+    "python"
+   ],
+   "lineas": [
+    "intentos = 0",
+    "clave = input(\"Contraseña: \")",
+    "while clave != \"python\":",
+    "    intentos = intentos + 1",
+    "    clave = input(\"Otra vez: \")",
+    "print(\"Intentos fallidos:\", intentos)"
+   ],
+   "grupos": [
+    [
+     0,
+     1
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "distractores": [
+    "while clave == \"python\":"
+   ],
+   "salida": [
+    "Intentos fallidos: 2"
+   ]
+  },
+  {
+   "id": "while10",
+   "tema": "while",
+   "tipo": "programa",
+   "titulo": "Suma hasta el cero",
+   "descripcion": "Pide números enteros hasta que el usuario escriba 0. Al final imprime la suma de todos.",
+   "entrada": "Enteros, uno por uno; el 0 termina.",
+   "salida": "Solo la suma.",
+   "usa": "while con un centinela",
+   "pistas": [
+    "Pide el primer número antes del while y el siguiente al final del bloque.",
+    "La condición es n != 0; dentro, suma = suma + n."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "5",
+      "3",
+      "2",
+      "0"
+     ],
+     "salida": [
+      "10"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "0"
+     ],
+     "salida": [
+      "0"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "-4",
+      "10",
+      "0"
+     ],
+     "salida": [
+      "6"
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "5",
+     "3",
+     "2",
+     "0"
+    ],
+    "salida": [
+     "10"
+    ]
+   }
+  },
+  {
+   "id": "while11",
+   "tema": "while",
+   "tipo": "programa",
+   "titulo": "La alcancía",
+   "descripcion": "Pide depósitos hasta juntar $100 o más. Al final imprime cuántos depósitos se hicieron y cuánto se juntó.",
+   "entrada": "Depósitos enteros, uno por uno.",
+   "salida": "El número de depósitos y el total (en ese orden).",
+   "usa": "while con un contador y un acumulador",
+   "pistas": [
+    "Necesitas dos variables en 0 antes del ciclo: el ahorro (acumulador) y los depósitos (contador).",
+    "La condición es ahorro < 100; el print va después del ciclo."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "30",
+      "50",
+      "40"
+     ],
+     "contiene": [
+      3,
+      120
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "100"
+     ],
+     "contiene": [
+      1,
+      100
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "20",
+      "20",
+      "20",
+      "20",
+      "20"
+     ],
+     "contiene": [
+      5,
+      100
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "30",
+     "50",
+     "40"
+    ],
+    "salida": [
+     "Depósitos: 3 Total: 120"
+    ]
+   }
+  },
+  {
+   "id": "anid1",
+   "tema": "anid",
+   "tipo": "opcion",
+   "pregunta": "¿Cuántos asteriscos imprime?",
+   "codigo": "for i in range(3):\n    for j in range(4):\n        print(\"*\")",
+   "explicacion": "Vueltas totales = vueltas del externo × vueltas del interno = 3 × 4 = 12.",
+   "opciones": [
+    "7",
+    "12",
+    "4",
+    "3"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "anid2",
+   "tema": "anid",
+   "tipo": "salida",
+   "codigo": "for i in range(1, 3):\n    for j in range(1, 4):\n        print(i, j)",
+   "explicacion": "Por cada valor de i, el ciclo interno corre completo: j vale 1, 2 y 3 antes de que i cambie.",
+   "respuesta": [
+    "1 1",
+    "1 2",
+    "1 3",
+    "2 1",
+    "2 2",
+    "2 3"
+   ]
+  },
+  {
+   "id": "anid3",
+   "tema": "anid",
+   "tipo": "salida",
+   "codigo": "for i in range(1, 4):\n    for j in range(i):\n        print(\"*\", end=\"\")\n    print()",
+   "explicacion": "El interno da i vueltas: 1, 2 y 3 asteriscos. end=\"\" evita el salto de línea y print() cierra cada renglón.",
+   "respuesta": [
+    "*",
+    "**",
+    "***"
+   ]
+  },
+  {
+   "id": "anid4",
+   "tema": "anid",
+   "tipo": "salida",
+   "codigo": "formas = 0\nfor d1 in range(1, 4):\n    for d2 in range(1, 4):\n        if d1 + d2 == 4:\n            formas = formas + 1\nprint(formas)",
+   "explicacion": "Se revisan las 9 combinaciones y suman 4 tres de ellas: 1+3, 2+2 y 3+1.",
+   "respuesta": [
+    "3"
+   ]
+  },
+  {
+   "id": "anid5",
+   "tema": "anid",
+   "tipo": "opcion",
+   "pregunta": "Para cada alumno se piden 3 calificaciones y se imprime su promedio. ¿Dónde va suma = 0?",
+   "codigo": "for a in range(2):\n    # (A)\n    for c in range(3):\n        # (B)\n        calif = float(input(\"Calif: \"))\n        suma = suma + calif\n    print(\"Promedio:\", suma / 3)",
+   "explicacion": "Se reinicia para cada alumno, antes de sumar sus 3 calificaciones. Antes de los dos ciclos mezclaría a todos los alumnos; en (B) se borraría en cada calificación.",
+   "opciones": [
+    "Antes de los dos ciclos",
+    "En (A): dentro del externo, antes del interno",
+    "En (B): dentro del interno",
+    "Después del print"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "anid6",
+   "tema": "anid",
+   "tipo": "traza",
+   "enunciado": "Llena la tabla: una fila por cada vuelta del ciclo interno.",
+   "codigo": "total = 0\nfor i in range(1, 3):\n    for j in range(1, 3):\n        total = total + i * j\nprint(total)",
+   "explicacion": "j recorre 1 y 2 para cada i. Se suman 1·1 + 1·2 + 2·1 + 2·2 = 9.",
+   "columnas": [
+    "i",
+    "j",
+    "total"
+   ],
+   "filas": [
+    [
+     "1",
+     "1",
+     "?1"
+    ],
+    [
+     "1",
+     "?2",
+     "?3"
+    ],
+    [
+     "?2",
+     "?1",
+     "?5"
+    ],
+    [
+     "?2",
+     "?2",
+     "?9"
+    ]
+   ]
+  },
+  {
+   "id": "anid7",
+   "tema": "anid",
+   "tipo": "completar",
+   "enunciado": "Completa el programa para que dibuje 3 renglones de 5 gatos (#).",
+   "explicacion": "El externo controla los renglones y el interno las columnas. print() va alineado con el for interno: termina cada renglón.",
+   "partes": [
+    "for fila in range(",
+    [
+     "3"
+    ],
+    "):\n    for col in range(",
+    [
+     "5"
+    ],
+    "):\n        print(\"#\", end=",
+    [
+     "\"\"",
+     "''"
+    ],
+    ")\n    ",
+    [
+     "print()"
+    ],
+    ""
+   ],
+   "salida": [
+    "#####",
+    "#####",
+    "#####"
+   ]
+  },
+  {
+   "id": "anid8",
+   "tema": "anid",
+   "tipo": "error",
+   "enunciado": "Debería dibujar 3 renglones de ****, pero cada asterisco sale en su propio renglón. Toca la línea con el error.",
+   "codigo": "for i in range(3):\n    for j in range(4):\n        print(\"*\", end=\"\")\n        print()",
+   "explicacion": "El print() quedó dentro del interno. Debe ir con 4 espacios, alineado con el for interno, para que se ejecute una vez por renglón.",
+   "linea": 4,
+   "opciones": [
+    "    print()",
+    "print()",
+    "        print(\"\")",
+    "        print(\"*\")"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "anid9",
+   "tema": "anid",
+   "tipo": "ordenar",
+   "enunciado": "Arma el programa que imprime las tablas del 1 al 3, cada una con su título.",
+   "explicacion": "El título va dentro del externo pero fuera del interno: sale una vez por tabla.",
+   "lineas": [
+    "for n in range(1, 4):",
+    "    print(\"Tabla del\", n)",
+    "    for i in range(1, 11):",
+    "        print(n, \"x\", i, \"=\", n * i)"
+   ],
+   "grupos": [],
+   "distractores": [
+    "    print(\"Tabla del\", i)"
+   ],
+   "salida": [
+    "Tabla del 1",
+    "1 x 1 = 1",
+    "1 x 2 = 2",
+    "1 x 3 = 3",
+    "1 x 4 = 4",
+    "1 x 5 = 5",
+    "1 x 6 = 6",
+    "1 x 7 = 7",
+    "1 x 8 = 8",
+    "1 x 9 = 9",
+    "1 x 10 = 10",
+    "Tabla del 2",
+    "2 x 1 = 2",
+    "2 x 2 = 4",
+    "2 x 3 = 6",
+    "2 x 4 = 8",
+    "2 x 5 = 10",
+    "2 x 6 = 12",
+    "2 x 7 = 14",
+    "2 x 8 = 16",
+    "2 x 9 = 18",
+    "2 x 10 = 20",
+    "Tabla del 3",
+    "3 x 1 = 3",
+    "3 x 2 = 6",
+    "3 x 3 = 9",
+    "3 x 4 = 12",
+    "3 x 5 = 15",
+    "3 x 6 = 18",
+    "3 x 7 = 21",
+    "3 x 8 = 24",
+    "3 x 9 = 27",
+    "3 x 10 = 30"
+   ]
+  },
+  {
+   "id": "anid10",
+   "tema": "anid",
+   "tipo": "programa",
+   "titulo": "Rectángulo de X",
+   "descripcion": "Pide el número de renglones y de columnas, e imprime un rectángulo hecho con la letra X (sin espacios).",
+   "entrada": "Renglones y columnas (enteros).",
+   "salida": "El rectángulo de X.",
+   "usa": "for anidado y print(..., end=\"\")",
+   "pistas": [
+    "El ciclo externo recorre los renglones y el interno las columnas.",
+    "Dentro del interno: print(\"X\", end=\"\"). Al terminar el interno, print() cambia de renglón."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "2",
+      "4"
+     ],
+     "salida": [
+      "XXXX",
+      "XXXX"
+     ],
+     "exacto": true
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "3",
+      "1"
+     ],
+     "salida": [
+      "X",
+      "X",
+      "X"
+     ],
+     "exacto": true
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "1",
+      "6"
+     ],
+     "salida": [
+      "XXXXXX"
+     ],
+     "exacto": true
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "2",
+     "4"
+    ],
+    "salida": [
+     "XXXX",
+     "XXXX"
+    ]
+   }
+  },
+  {
+   "id": "lis1",
+   "tema": "lis",
+   "tipo": "opcion",
+   "pregunta": "¿Cómo se obtiene el último elemento de cualquier lista?",
+   "explicacion": "Con índices negativos se cuenta desde el final. lista[len(lista)] marca IndexError: el último índice es len(lista) - 1.",
+   "opciones": [
+    "lista[len(lista)]",
+    "lista[-1]",
+    "lista[0]",
+    "lista[last]"
+   ],
+   "correcta": 1
+  },
+  {
+   "id": "lis2",
+   "tema": "lis",
+   "tipo": "salida",
+   "codigo": "personajes = [\"Mario\", \"Luigi\", \"Peach\", \"Toad\"]\nprint(personajes[1])\nprint(personajes[-2])\nprint(len(personajes))",
+   "explicacion": "El primer elemento es el 0, así que [1] es Luigi. [-2] es el penúltimo: Peach.",
+   "respuesta": [
+    "Luigi",
+    "Peach",
+    "4"
+   ]
+  },
+  {
+   "id": "lis3",
+   "tema": "lis",
+   "tipo": "salida",
+   "codigo": "equipo = [\"Mario\", \"Luigi\"]\nequipo.append(\"Yoshi\")\nequipo.insert(0, \"Toad\")\nequipo.remove(\"Luigi\")\nprint(equipo)",
+   "explicacion": "append agrega al final, insert(0, …) al inicio y remove quita ese valor. Escribe la lista como la muestra Python, con corchetes y comillas.",
+   "respuesta": [
+    "['Toad', 'Mario', 'Yoshi']"
+   ]
+  },
+  {
+   "id": "lis4",
+   "tema": "lis",
+   "tipo": "salida",
+   "codigo": "monedas = [12, 5, 20]\nx = monedas.pop(0)\nmonedas.append(x + 1)\nprint(monedas)\nprint(x)",
+   "explicacion": "pop(0) quita el elemento de la posición 0 y lo regresa: x vale 12. Luego se agrega 13 al final.",
+   "respuesta": [
+    "[5, 20, 13]",
+    "12"
+   ]
+  },
+  {
+   "id": "lis5",
+   "tema": "lis",
+   "tipo": "opcion",
+   "pregunta": "¿Qué imprime?",
+   "codigo": "nums = [1, 2]\nnums = nums.append(3)\nprint(nums)",
+   "explicacion": "append cambia la lista y regresa None; al guardarlo, nums se queda con None. Se escribe solo nums.append(3).",
+   "opciones": [
+    "[1, 2, 3]",
+    "None",
+    "[3]",
+    "Marca error"
+   ],
+   "correcta": 1,
+   "codigo_opciones": true
+  },
+  {
+   "id": "lis6",
+   "tema": "lis",
+   "tipo": "salida",
+   "codigo": "monedas = [12, 5, 20, 8]\nprint(sum(monedas), max(monedas))\nprint(7 in monedas)",
+   "explicacion": "sum da 45 y max 20. 7 in monedas pregunta si el 7 está en la lista: False.",
+   "respuesta": [
+    "45 20",
+    "False"
+   ]
+  },
+  {
+   "id": "lis7",
+   "tema": "lis",
+   "tipo": "opcion",
+   "pregunta": "¿Qué imprime?",
+   "codigo": "monedas = [12, 5, 20]\nfor m in monedas:\n    m = 0\nprint(monedas)",
+   "explicacion": "Cambiar la variable del for no cambia la lista. Para modificarla hay que recorrer por índice: monedas[i] = 0.",
+   "opciones": [
+    "[0, 0, 0]",
+    "[12, 5, 20]",
+    "0",
+    "[]"
+   ],
+   "correcta": 1,
+   "codigo_opciones": true
+  },
+  {
+   "id": "lis8",
+   "tema": "lis",
+   "tipo": "traza",
+   "enunciado": "Patrón del mayor: llena la tabla en cada vuelta.",
+   "codigo": "monedas = [7, 3, 9, 9, 4]\nmayor = monedas[0]\nfor m in monedas:\n    if m > mayor:\n        mayor = m\nprint(mayor)",
+   "explicacion": "Se supone que el primero es el mayor y se reemplaza solo si aparece uno MÁS grande. El segundo 9 no es mayor que 9.",
+   "columnas": [
+    "m",
+    "¿m > mayor?",
+    "mayor"
+   ],
+   "filas": [
+    [
+     "7",
+     "?False",
+     "?7"
+    ],
+    [
+     "3",
+     "?False",
+     "?7"
+    ],
+    [
+     "9",
+     "?True",
+     "?9"
+    ],
+    [
+     "9",
+     "?False",
+     "?9"
+    ],
+    [
+     "4",
+     "?False",
+     "?9"
+    ]
+   ]
+  },
+  {
+   "id": "lis9",
+   "tema": "lis",
+   "tipo": "completar",
+   "enunciado": "Completa el programa que forma una lista nueva sin los villanos.",
+   "explicacion": "Patrón construir: lista vacía antes del ciclo y append() dentro. not in pregunta si NO está en la lista.",
+   "partes": [
+    "personajes = [\"Mario\", \"Bowser\", \"Peach\", \"Wario\"]\nvillanos = [\"Bowser\", \"Wario\"]\nheroes = ",
+    [
+     "[]",
+     "list()"
+    ],
+    "\nfor p in personajes:\n    if p ",
+    [
+     "not in"
+    ],
+    " villanos:\n        heroes.",
+    [
+     "append"
+    ],
+    "(p)\nprint(heroes)"
+   ],
+   "salida": [
+    "['Mario', 'Peach']"
+   ]
+  },
+  {
+   "id": "lis10",
+   "tema": "lis",
+   "tipo": "error",
+   "enunciado": "Imprime los tres tiempos y luego marca IndexError. Toca la línea con el error.",
+   "codigo": "tiempos = [95.2, 98.7, 91.4]\nfor i in range(len(tiempos) + 1):\n    print(tiempos[i])",
+   "explicacion": "range(len(tiempos)) da los índices 0, 1 y 2. Con + 1 llega al 3, que no existe.",
+   "linea": 2,
+   "opciones": [
+    "for i in range(len(tiempos)):",
+    "for i in range(1, len(tiempos) + 1):",
+    "for i in tiempos + 1:",
+    "for i in range(len(tiempos) - 1):"
+   ],
+   "correcta": 0
+  },
+  {
+   "id": "lis11",
+   "tema": "lis",
+   "tipo": "ordenar",
+   "enunciado": "Arma el programa que encuentra al piloto con el menor tiempo (listas paralelas).",
+   "explicacion": "mejor guarda la POSICIÓN, no el tiempo: con esa posición se consultan las dos listas.",
+   "lineas": [
+    "pilotos = [\"Mario\", \"Luigi\", \"Peach\"]",
+    "tiempos = [95.2, 98.7, 91.4]",
+    "mejor = 0",
+    "for i in range(len(tiempos)):",
+    "    if tiempos[i] < tiempos[mejor]:",
+    "        mejor = i",
+    "print(\"Gana\", pilotos[mejor])"
+   ],
+   "grupos": [
+    [
+     0,
+     2
+    ]
+   ],
+   "distractores": [
+    "        mejor = tiempos[i]"
+   ],
+   "salida": [
+    "Gana Peach"
+   ]
+  },
+  {
+   "id": "lis12",
+   "tema": "lis",
+   "tipo": "programa",
+   "titulo": "Promedio sin sum()",
+   "descripcion": "Escribe la función promedio(lista) que regrese el promedio de los números de la lista, sin usar sum().",
+   "entrada": "Una lista de números (parámetro).",
+   "salida": "El promedio (con return).",
+   "usa": "for con un acumulador y len()",
+   "inicial": "def promedio(lista):\n    ",
+   "pistas": [
+    "Recorre la lista por elemento y suma cada valor en un acumulador.",
+    "Al terminar el ciclo: return total / len(lista)."
+   ],
+   "prohibido": [
+    {
+     "texto": "sum(",
+     "mensaje": "Resuélvelo sin sum(): usa un acumulador."
+    }
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "promedio",
+     "args": [
+      [
+       90,
+       80,
+       100
+      ]
+     ],
+     "esperado": 90.0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "promedio",
+     "args": [
+      [
+       7,
+       8
+      ]
+     ],
+     "esperado": 7.5
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "promedio",
+     "args": [
+      [
+       5
+      ]
+     ],
+     "esperado": 5.0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "promedio",
+     "args": [
+      [
+       10,
+       0,
+       4,
+       6
+      ]
+     ],
+     "esperado": 5.0
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "promedio([90, 80, 100])",
+     "resultado": "90.0"
+    },
+    {
+     "llamada": "promedio([7, 8])",
+     "resultado": "7.5"
+    }
+   ]
+  },
+  {
+   "id": "lis13",
+   "tema": "lis",
+   "tipo": "programa",
+   "titulo": "Más que el límite",
+   "descripcion": "Escribe la función cuantos_mayores(lista, limite) que regrese cuántos elementos de la lista son mayores que limite.",
+   "entrada": "Una lista de números y un límite (parámetros).",
+   "salida": "Cuántos son mayores (con return).",
+   "inicial": "def cuantos_mayores(lista, limite):\n    ",
+   "pistas": [
+    "Patrón contador: empieza en 0 y suma 1 cuando el elemento cumple.",
+    "Ojo: mayores, no mayores o iguales. Usa >."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "cuantos_mayores",
+     "args": [
+      [
+       12,
+       5,
+       20,
+       8,
+       15
+      ],
+      10
+     ],
+     "esperado": 3
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "cuantos_mayores",
+     "args": [
+      [
+       1,
+       2,
+       3
+      ],
+      5
+     ],
+     "esperado": 0
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "cuantos_mayores",
+     "args": [
+      [
+       10,
+       10,
+       11
+      ],
+      10
+     ],
+     "esperado": 1
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "cuantos_mayores",
+     "args": [
+      [],
+      0
+     ],
+     "esperado": 0
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "cuantos_mayores([12, 5, 20, 8, 15], 10)",
+     "resultado": "3"
+    }
+   ]
+  },
+  {
+   "id": "ret1",
+   "tema": "ret",
+   "tipo": "salida",
+   "codigo": "def suma_pares(lista):\n    total = 0\n    for x in lista:\n        if x % 2 == 0:\n            total = total + x\n    return total\n\nprint(suma_pares([1, 2, 3, 4, 10]))",
+   "explicacion": "Solo suma los pares: 2 + 4 + 10 = 16.",
+   "respuesta": [
+    "16"
+   ]
+  },
+  {
+   "id": "ret2",
+   "tema": "ret",
+   "tipo": "salida",
+   "codigo": "def cuenta(texto, letra):\n    veces = 0\n    for c in texto:\n        if c == letra:\n            veces = veces + 1\n    return veces\n\nprint(cuenta(\"banana\", \"a\"))\nprint(cuenta(\"Mario\", \"m\"))",
+   "explicacion": "«banana» tiene 3 letras a. «Mario» empieza con M mayúscula, que es distinta de m: 0.",
+   "respuesta": [
+    "3",
+    "0"
+   ]
+  },
+  {
+   "id": "ret3",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "¿Es primo?",
+   "descripcion": "Escribe la función es_primo(n) que regrese True si n es primo y False si no. Un primo es mayor que 1 y solo se divide entre 1 y entre sí mismo.",
+   "entrada": "Un entero n (parámetro).",
+   "salida": "True o False (con return).",
+   "inicial": "def es_primo(n):\n    ",
+   "pistas": [
+    "Prueba los divisores de 2 a n - 1 con un for: si alguno divide exacto (n % d == 0), no es primo.",
+    "El return True va DESPUÉS del ciclo, cuando ya revisaste todos. No olvides que 1 no es primo."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      13
+     ],
+     "esperado": true
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      9
+     ],
+     "esperado": false
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      2
+     ],
+     "esperado": true
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      1
+     ],
+     "esperado": false
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      25
+     ],
+     "esperado": false
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "es_primo",
+     "args": [
+      97
+     ],
+     "esperado": true
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "es_primo(13)",
+     "resultado": "True"
+    },
+    {
+     "llamada": "es_primo(9)",
+     "resultado": "False"
+    }
+   ]
+  },
+  {
+   "id": "ret4",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "Vocales",
+   "descripcion": "Escribe la función contar_vocales(texto) que regrese cuántas vocales tiene el texto, sin importar mayúsculas o minúsculas (sin acentos).",
+   "entrada": "Un texto (parámetro).",
+   "salida": "Cuántas vocales tiene (con return).",
+   "inicial": "def contar_vocales(texto):\n    ",
+   "pistas": [
+    "Recorre el texto letra por letra con un for.",
+    "if letra in \"aeiouAEIOU\" revisa mayúsculas y minúsculas a la vez."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "contar_vocales",
+     "args": [
+      "programacion"
+     ],
+     "esperado": 5
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "contar_vocales",
+     "args": [
+      "Python"
+     ],
+     "esperado": 1
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "contar_vocales",
+     "args": [
+      "AEIOU"
+     ],
+     "esperado": 5
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "contar_vocales",
+     "args": [
+      "xyz"
+     ],
+     "esperado": 0
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "contar_vocales(\"Python\")",
+     "resultado": "1"
+    },
+    {
+     "llamada": "contar_vocales(\"AEIOU\")",
+     "resultado": "5"
+    }
+   ]
+  },
+  {
+   "id": "ret5",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "Solo aprobados",
+   "descripcion": "Escribe la función aprobados(califs) que regrese una lista NUEVA solo con las calificaciones de 70 o más, en el mismo orden.",
+   "entrada": "Una lista de calificaciones (parámetro).",
+   "salida": "Una lista nueva (con return).",
+   "inicial": "def aprobados(califs):\n    ",
+   "pistas": [
+    "Patrón construir: crea una lista vacía antes del ciclo.",
+    "Dentro del for, si c >= 70 usa append(c). Al final, return de la lista nueva."
+   ],
+   "pruebas": [
+    {
+     "tipo": "funcion",
+     "funcion": "aprobados",
+     "args": [
+      [
+       90,
+       65,
+       70,
+       40,
+       100
+      ]
+     ],
+     "esperado": [
+      90,
+      70,
+      100
+     ]
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "aprobados",
+     "args": [
+      [
+       10,
+       20
+      ]
+     ],
+     "esperado": []
+    },
+    {
+     "tipo": "funcion",
+     "funcion": "aprobados",
+     "args": [
+      [
+       70
+      ]
+     ],
+     "esperado": [
+      70
+     ]
+    }
+   ],
+   "ejemplo_llamadas": [
+    {
+     "llamada": "aprobados([90, 65, 70, 40, 100])",
+     "resultado": "[90, 70, 100]"
+    }
+   ]
+  },
+  {
+   "id": "ret6",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "FizzBuzz",
+   "descripcion": "Pide un entero n e imprime los números del 1 al n, uno por renglón. Si es múltiplo de 3 imprime Fizz; si es múltiplo de 5, Buzz; si es de ambos, FizzBuzz.",
+   "entrada": "Un entero n.",
+   "salida": "n renglones.",
+   "usa": "for con if / elif / else",
+   "pistas": [
+    "El orden de las condiciones importa: ¿qué pasa con el 15 si revisas primero el 3?",
+    "Revisa primero i % 3 == 0 and i % 5 == 0 (o i % 15 == 0)."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "15"
+     ],
+     "salida": [
+      "1",
+      "2",
+      "Fizz",
+      "4",
+      "Buzz",
+      "Fizz",
+      "7",
+      "8",
+      "Fizz",
+      "Buzz",
+      "11",
+      "Fizz",
+      "13",
+      "14",
+      "FizzBuzz"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "5"
+     ],
+     "salida": [
+      "1",
+      "2",
+      "Fizz",
+      "4",
+      "Buzz"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "2"
+     ],
+     "salida": [
+      "1",
+      "2"
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "15"
+    ],
+    "salida": [
+     "1",
+     "2",
+     "Fizz",
+     "4",
+     "Buzz",
+     "Fizz",
+     "7",
+     "8",
+     "Fizz",
+     "Buzz",
+     "11",
+     "Fizz",
+     "13",
+     "14",
+     "FizzBuzz"
+    ]
+   }
+  },
+  {
+   "id": "ret7",
+   "tema": "ret",
+   "tipo": "programa",
+   "titulo": "Edad válida",
+   "descripcion": "Pide la edad hasta que esté entre 0 y 120. Cada vez que no sea válida imprime Edad inválida. Al final imprime Edad registrada: y la edad.",
+   "entrada": "Edades enteras, hasta que una sea válida.",
+   "salida": [
+    "Edad inválida (por cada dato malo)",
+    "Edad registrada: <edad>"
+   ],
+   "usa": "while para validar",
+   "pistas": [
+    "La condición del while describe el dato inválido: edad < 0 or edad > 120.",
+    "Dentro del ciclo imprime el aviso y vuelve a pedir la edad."
+   ],
+   "pruebas": [
+    {
+     "tipo": "programa",
+     "entradas": [
+      "-5",
+      "150",
+      "20"
+     ],
+     "salida": [
+      "Edad inválida",
+      "Edad inválida",
+      "Edad registrada: 20"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "0"
+     ],
+     "salida": [
+      "Edad registrada: 0"
+     ]
+    },
+    {
+     "tipo": "programa",
+     "entradas": [
+      "121",
+      "120"
+     ],
+     "salida": [
+      "Edad inválida",
+      "Edad registrada: 120"
+     ]
+    }
+   ],
+   "ejemplo": {
+    "entradas": [
+     "-5",
+     "150",
+     "20"
+    ],
+    "salida": [
+     "Edad inválida",
+     "Edad inválida",
+     "Edad registrada: 20"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,1597 @@
+import { preparar, evaluar } from "./ejecutor.js";
+
+const CLAVE = "repaso-tc1038-v1";
+
+const vista = document.getElementById("vista");
+const marcadorPuntos = document.getElementById("puntos");
+const avisoPuntos = document.getElementById("aviso-puntos");
+
+let datos = null;
+// Ejercicios que el alumno abrió otra vez para practicar (sin puntos).
+const repasos = new Set();
+// Simulacro en curso (solo en memoria: si recarga la página, se pierde).
+let sim = null;
+let relojSim = null;
+
+// ---------- utilidades ----------
+
+function el(etiqueta, atributos = {}, ...hijos) {
+  const nodo = document.createElement(etiqueta);
+  for (const [nombre, valor] of Object.entries(atributos)) {
+    if (valor === null || valor === undefined || valor === false) continue;
+    if (nombre === "class") nodo.className = valor;
+    else if (nombre.startsWith("on")) nodo.addEventListener(nombre.slice(2), valor);
+    else if (valor === true) nodo.setAttribute(nombre, "");
+    else nodo.setAttribute(nombre, valor);
+  }
+  agregar(nodo, hijos);
+  return nodo;
+}
+
+function agregar(nodo, hijos) {
+  for (const hijo of hijos.flat(Infinity)) {
+    if (hijo === null || hijo === undefined || hijo === false) continue;
+    nodo.append(hijo instanceof Node ? hijo : document.createTextNode(String(hijo)));
+  }
+}
+
+function reemplazar(nodo, ...hijos) {
+  nodo.replaceChildren();
+  agregar(nodo, hijos);
+}
+
+function barajar(lista) {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+const almacen = {
+  leer(clave, defecto) {
+    try {
+      const texto = localStorage.getItem(`${CLAVE}:${clave}`);
+      return texto === null ? defecto : JSON.parse(texto);
+    } catch {
+      return defecto;
+    }
+  },
+  guardar(clave, valor) {
+    try {
+      localStorage.setItem(`${CLAVE}:${clave}`, JSON.stringify(valor));
+    } catch {
+      /* sin almacenamiento: la app sigue funcionando */
+    }
+  },
+};
+
+// ---------- resaltado de Python ----------
+
+const PATRON =
+  /(#.*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\b(\d+(?:\.\d+)?)\b|\b(def|return|if|elif|else|for|while|in|not|and|or|import|from|True|False|None|break|continue|pass)\b|\b(print|input|int|float|str|len|range|sum|max|min|list|round|type)\b(?=\s*\()/g;
+
+function resaltar(texto) {
+  const nodos = [];
+  let ultimo = 0;
+  for (const m of texto.matchAll(PATRON)) {
+    if (m.index > ultimo) nodos.push(texto.slice(ultimo, m.index));
+    const clase = m[1] ? "c" : m[2] ? "s" : m[3] ? "n" : m[4] ? "k" : "f";
+    nodos.push(el("span", { class: `tok-${clase}` }, m[0]));
+    ultimo = m.index + m[0].length;
+  }
+  nodos.push(texto.slice(ultimo));
+  return nodos;
+}
+
+function bloqueCodigo(codigo) {
+  return el("pre", { class: "codigo" }, codigo.startsWith("Traceback") ? codigo : resaltar(codigo));
+}
+
+function bloqueSalida(renglones, maximo = 8) {
+  const visibles = renglones.length > maximo ? [...renglones.slice(0, maximo - 1), "…"] : renglones;
+  return el("pre", { class: "codigo salida" }, visibles.join("\n"));
+}
+
+function entradasTexto(entradas) {
+  return el(
+    "p",
+    { class: "entradas" },
+    "El usuario escribe: ",
+    entradas.map((e) => el("code", {}, e)),
+  );
+}
+
+// ---------- progreso y puntos ----------
+
+const estado = Object.assign({ hechos: {}, fallos: {}, pistas: {}, codigos: {}, simulacro: null }, almacen.leer("estado", {}));
+
+function guardarEstado() {
+  almacen.guardar("estado", estado);
+  pintarPuntos();
+}
+
+function temaDe(ejercicio) {
+  return datos.temas.find((t) => t.id === ejercicio.tema);
+}
+
+function puntosDe(ejercicio) {
+  return datos.tipos[ejercicio.tipo].puntos;
+}
+
+function valorActual(ejercicio) {
+  const restan = (estado.fallos[ejercicio.id] || 0) + (estado.pistas[ejercicio.id] || 0);
+  return Math.max(1, puntosDe(ejercicio) - restan);
+}
+
+function resuelto(ejercicio) {
+  return estado.hechos[ejercicio.id] !== undefined;
+}
+
+function puntosTotales() {
+  return Object.values(estado.hechos).reduce((suma, p) => suma + p, 0);
+}
+
+function puntosPosibles() {
+  return datos.ejercicios.reduce((suma, e) => suma + puntosDe(e), 0);
+}
+
+function simEnCurso() {
+  return sim && !sim.terminado;
+}
+
+function formatoTiempo(ms) {
+  const segundos = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
+}
+
+function pintarPuntos() {
+  if (!datos) return;
+  if (simEnCurso()) {
+    const restante = sim.fin - Date.now();
+    marcadorPuntos.textContent = `⏱ ${formatoTiempo(restante)}`;
+    marcadorPuntos.className = `puntos reloj${restante < 120000 ? " poco" : ""}`;
+    marcadorPuntos.setAttribute("aria-label", `Tiempo restante ${formatoTiempo(restante)}`);
+  } else {
+    marcadorPuntos.textContent = `★ ${puntosTotales()}`;
+    marcadorPuntos.className = "puntos";
+    marcadorPuntos.setAttribute("aria-label", `${puntosTotales()} puntos`);
+  }
+}
+
+function celebrar(puntos) {
+  avisoPuntos.textContent = `+${puntos} ★`;
+  avisoPuntos.classList.add("visible");
+  setTimeout(() => avisoPuntos.classList.remove("visible"), 1600);
+}
+
+function siguientePendiente() {
+  const ejercicio = datos.ejercicios.find((e) => !resuelto(e));
+  return ejercicio ? `#/ej/${ejercicio.id}` : "#/";
+}
+
+function ir(ruta) {
+  if (location.hash === ruta) mostrar();
+  else location.hash = ruta;
+}
+
+// ---------- piezas comunes ----------
+
+function barraAcciones(...botones) {
+  return el("div", { class: "acciones" }, el("div", { class: "acciones__contenido" }, botones));
+}
+
+function boton(texto, alClic, clase = "") {
+  return el("button", { type: "button", class: `boton ${clase}`.trim(), onclick: alClic }, texto);
+}
+
+function cajaRetro(clase, titulo, ...contenido) {
+  return el("div", { class: `explicacion ${clase}` }, el("strong", {}, titulo), contenido);
+}
+
+function enfocarRetro(retro) {
+  requestAnimationFrame(() => retro.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+}
+
+function sinMarcas(nodos) {
+  for (const nodo of nodos) nodo.classList.remove("ok", "mal");
+}
+
+// ---------- normalización de respuestas ----------
+
+function renglon(texto) {
+  return texto
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/"/g, "'")
+    .replace(/\s*([[\](),:])\s*/g, "$1");
+}
+
+function renglones(texto) {
+  return texto.replace(/\r/g, "").split("\n").map(renglon).filter(Boolean);
+}
+
+function compacto(texto) {
+  return texto.replace(/\s+/g, "").replace(/'/g, '"');
+}
+
+function celdaIgual(escrito, esperado) {
+  const a = escrito.trim().replace(/\s+/g, "").toLowerCase();
+  const b = esperado.trim().replace(/\s+/g, "").toLowerCase();
+  if (a === b) return true;
+  const na = Number(a);
+  const nb = Number(b);
+  return a !== "" && !Number.isNaN(na) && !Number.isNaN(nb) && na === nb;
+}
+
+// =====================================================================
+// Componentes: uno por tipo de ejercicio.
+// Cada uno regresa { nodo, listo(), revisar(), revelar() }.
+// revisar() regresa { ok, mensaje, fraccion?, detalle?, sigue? }.
+//   sigue: true  → paso intermedio correcto, todavía no termina (sin castigo).
+//   fraccion     → crédito parcial en el simulacro.
+// =====================================================================
+
+function compOpcion(ej, cambio) {
+  let elegida = null;
+  let cerrada = false;
+  const contenedor = el("div", { class: "opciones", role: "group", "aria-label": "Opciones" });
+
+  function pintar() {
+    reemplazar(
+      contenedor,
+      ej.opciones.map((texto, i) => {
+        let clase = "opcion";
+        if (cerrada && i === ej.correcta) clase += " correcta";
+        else if (cerrada && i === elegida) clase += " incorrecta";
+        else if (cerrada) clase += " apagada";
+        else if (i === elegida) clase += " seleccionada";
+        return el(
+          "button",
+          {
+            type: "button",
+            class: clase,
+            disabled: cerrada,
+            "aria-pressed": !cerrada && i === elegida ? "true" : "false",
+            onclick: () => {
+              elegida = i;
+              pintar();
+              cambio();
+            },
+          },
+          el("span", { class: "opcion__letra" }, "ABCD"[i]),
+          ej.codigo_opciones ? el("span", { class: "opcion__codigo" }, resaltar(texto)) : el("span", {}, texto),
+        );
+      }),
+    );
+  }
+  pintar();
+
+  return {
+    nodo: [el("h2", {}, ej.pregunta), ej.codigo ? bloqueCodigo(ej.codigo) : null, contenedor],
+    unaOportunidad: true,
+    listo: () => elegida !== null,
+    revisar() {
+      cerrada = true;
+      pintar();
+      return elegida === ej.correcta ? { ok: true } : { ok: false, mensaje: "La respuesta correcta está marcada en verde." };
+    },
+    revelar() {
+      cerrada = true;
+      pintar();
+    },
+  };
+}
+
+function compSalida(ej, cambio) {
+  const area = el("textarea", {
+    class: "respuesta",
+    id: `resp-${ej.id}`,
+    rows: Math.min(10, Math.max(3, ej.respuesta.length + 1)),
+    spellcheck: "false",
+    autocapitalize: "off",
+    autocomplete: "off",
+    autocorrect: "off",
+    placeholder: "Un renglón por línea",
+  });
+  area.addEventListener("input", () => {
+    sinMarcas([area]);
+    cambio();
+  });
+  const solucion = el("div", { class: "grupo", hidden: true }, el("span", { class: "etiqueta" }, "El programa imprime"), bloqueSalida(ej.respuesta, 40));
+
+  return {
+    nodo: [
+      el("h2", {}, "¿Qué imprime este programa?"),
+      bloqueCodigo(ej.codigo),
+      ej.entradas ? entradasTexto(ej.entradas) : null,
+      el("div", { class: "grupo" }, el("label", { class: "etiqueta", for: area.id }, "Tu respuesta, exactamente como sale en pantalla"), area),
+      solucion,
+    ],
+    listo: () => area.value.trim() !== "",
+    revisar() {
+      const mia = renglones(area.value);
+      const buena = ej.respuesta.map(renglon).filter(Boolean);
+      if (mia.length === buena.length && mia.every((r, i) => r === buena[i])) {
+        area.classList.add("ok");
+        area.readOnly = true;
+        return { ok: true };
+      }
+      area.classList.add("mal");
+      let mensaje;
+      if (mia.length === buena.length && mia.every((r, i) => r.toLowerCase() === buena[i].toLowerCase())) {
+        mensaje = "Casi: revisa mayúsculas y minúsculas (True, False y None van con mayúscula).";
+      } else if (mia.length !== buena.length) {
+        mensaje = `Tu respuesta tiene ${mia.length} renglón${mia.length === 1 ? "" : "es"} y el programa imprime ${buena.length}.`;
+      } else {
+        const k = mia.findIndex((r, i) => r !== buena[i]);
+        mensaje = `El renglón ${k + 1} no es correcto. Haz la prueba de escritorio con calma.`;
+      }
+      return { ok: false, mensaje };
+    },
+    revelar() {
+      area.readOnly = true;
+      solucion.hidden = false;
+    },
+  };
+}
+
+function compCompletar(ej, cambio) {
+  const huecos = [];
+  const codigo = el(
+    "pre",
+    { class: "codigo" },
+    ej.partes.map((parte) => {
+      if (!Array.isArray(parte)) return resaltar(parte);
+      const ancho = Math.max(3, ...parte.map((r) => r.length)) + 1;
+      const entrada = el("input", {
+        class: "hueco",
+        style: `width:${ancho}ch`,
+        spellcheck: "false",
+        autocapitalize: "off",
+        autocomplete: "off",
+        autocorrect: "off",
+        enterkeyhint: "next",
+        "aria-label": `Hueco ${huecos.length + 1}`,
+      });
+      entrada.addEventListener("input", () => {
+        sinMarcas([entrada]);
+        cambio();
+      });
+      huecos.push({ entrada, respuestas: parte });
+      return entrada;
+    }),
+  );
+  const etiquetaSalida = ej.entradas ? `Si el usuario escribe ${ej.entradas.join(", ")}, imprime` : "Debe imprimir";
+
+  return {
+    nodo: [
+      el("h2", {}, ej.enunciado),
+      codigo,
+      el("div", { class: "grupo" }, el("span", { class: "etiqueta" }, etiquetaSalida), bloqueSalida(ej.salida)),
+    ],
+    listo: () => huecos.every((h) => h.entrada.value.trim() !== ""),
+    revisar() {
+      let malos = 0;
+      for (const h of huecos) {
+        const ok = h.respuestas.some((r) => compacto(r) === compacto(h.entrada.value));
+        h.entrada.classList.add(ok ? "ok" : "mal");
+        if (!ok) malos++;
+      }
+      if (!malos) {
+        for (const h of huecos) h.entrada.readOnly = true;
+        return { ok: true };
+      }
+      return {
+        ok: false,
+        fraccion: (huecos.length - malos) / huecos.length,
+        mensaje: malos === 1 ? "Hay un hueco incorrecto (marcado en rojo)." : `Hay ${malos} huecos incorrectos (marcados en rojo).`,
+      };
+    },
+    revelar() {
+      for (const h of huecos) {
+        h.entrada.value = h.respuestas[0];
+        h.entrada.readOnly = true;
+        sinMarcas([h.entrada]);
+        h.entrada.classList.add("ok");
+      }
+    },
+  };
+}
+
+function compError(ej, cambio) {
+  const lineas = ej.codigo.split("\n");
+  let paso = 1;
+  let lineaElegida = null;
+  let lineaMala = null;
+  let cerrada = false;
+  const lista = el("div", { class: "lineas", role: "group", "aria-label": "Líneas del programa" });
+  let opcionElegida = null;
+  const descartadas = new Set();
+  const cajaOpciones = el("div", { class: "opciones", role: "group", "aria-label": "Correcciones" });
+  const paso2 = el("div", { class: "grupo", hidden: true }, el("h2", {}, "¿Cómo se corrige esa línea?"), cajaOpciones);
+
+  function pintarOpciones() {
+    reemplazar(
+      cajaOpciones,
+      ej.opciones.map((texto, i) => {
+        let clase = "opcion";
+        if (cerrada && i === ej.correcta) clase += " correcta";
+        else if (descartadas.has(i)) clase += " incorrecta";
+        else if (cerrada) clase += " apagada";
+        else if (i === opcionElegida) clase += " seleccionada";
+        return el(
+          "button",
+          {
+            type: "button",
+            class: clase,
+            disabled: cerrada || descartadas.has(i),
+            "aria-pressed": i === opcionElegida ? "true" : "false",
+            onclick: () => {
+              opcionElegida = i;
+              pintarOpciones();
+              cambio();
+            },
+          },
+          el("span", { class: "opcion__letra" }, "ABCD"[i]),
+          el("span", { class: "opcion__codigo" }, resaltar(texto)),
+        );
+      }),
+    );
+  }
+  pintarOpciones();
+
+  function pintar() {
+    reemplazar(
+      lista,
+      lineas.map((texto, i) => {
+        const numero = i + 1;
+        let clase = "linea";
+        if (paso === 2 && numero === ej.linea) clase += " ok";
+        else if (numero === lineaMala) clase += " mal";
+        else if (numero === lineaElegida) clase += " seleccionada";
+        return el(
+          "button",
+          {
+            type: "button",
+            class: clase,
+            disabled: paso === 2 || cerrada,
+            "aria-pressed": numero === lineaElegida ? "true" : "false",
+            onclick: () => {
+              lineaElegida = numero;
+              lineaMala = null;
+              pintar();
+              cambio();
+            },
+          },
+          el("span", { class: "linea__numero" }, numero),
+          el("span", { class: "linea__texto" }, texto ? resaltar(texto) : " "),
+        );
+      }),
+    );
+  }
+  pintar();
+
+  return {
+    nodo: [el("h2", {}, ej.enunciado), ej.entradas ? entradasTexto(ej.entradas) : null, lista, paso2],
+    listo: () => !cerrada && (paso === 1 ? lineaElegida !== null : opcionElegida !== null),
+    revisar() {
+      if (paso === 1) {
+        if (lineaElegida === ej.linea) {
+          paso = 2;
+          pintar();
+          paso2.hidden = false;
+          return { sigue: true, mensaje: "¡Esa es la línea! Ahora elige cómo se corrige." };
+        }
+        lineaMala = lineaElegida;
+        lineaElegida = null;
+        pintar();
+        return { ok: false, fraccion: 0, mensaje: `La línea ${lineaMala} está bien. Busca el error en otra.` };
+      }
+      if (opcionElegida === ej.correcta) {
+        cerrada = true;
+        pintarOpciones();
+        return { ok: true };
+      }
+      descartadas.add(opcionElegida);
+      opcionElegida = null;
+      pintarOpciones();
+      return { ok: false, fraccion: 0.5, mensaje: "Esa corrección no arregla el problema. Prueba con otra." };
+    },
+    revelar() {
+      paso = 2;
+      cerrada = true;
+      lineaMala = null;
+      pintar();
+      paso2.hidden = false;
+      pintarOpciones();
+    },
+  };
+}
+
+function compTraza(ej, cambio) {
+  const celdas = [];
+  const tabla = el(
+    "table",
+    {},
+    el("thead", {}, el("tr", {}, ej.columnas.map((c) => el("th", { scope: "col" }, c)))),
+    el(
+      "tbody",
+      {},
+      ej.filas.map((fila, f) =>
+        el(
+          "tr",
+          {},
+          fila.map((valor, c) => {
+            if (!valor.startsWith("?")) return el("td", {}, valor);
+            const entrada = el("input", {
+              class: "celda",
+              spellcheck: "false",
+              autocapitalize: "off",
+              autocomplete: "off",
+              autocorrect: "off",
+              enterkeyhint: "next",
+              "aria-label": `${ej.columnas[c]}, fila ${f + 1}`,
+            });
+            entrada.addEventListener("input", () => {
+              sinMarcas([entrada]);
+              cambio();
+            });
+            celdas.push({ entrada, respuesta: valor.slice(1) });
+            return el("td", {}, entrada);
+          }),
+        ),
+      ),
+    ),
+  );
+
+  return {
+    nodo: [el("h2", {}, ej.enunciado), bloqueCodigo(ej.codigo), el("div", { class: "traza" }, tabla)],
+    listo: () => celdas.every((c) => c.entrada.value.trim() !== ""),
+    revisar() {
+      let malas = 0;
+      for (const c of celdas) {
+        const ok = celdaIgual(c.entrada.value, c.respuesta);
+        c.entrada.classList.add(ok ? "ok" : "mal");
+        if (!ok) malas++;
+      }
+      if (!malas) {
+        for (const c of celdas) c.entrada.readOnly = true;
+        return { ok: true };
+      }
+      return {
+        ok: false,
+        fraccion: (celdas.length - malas) / celdas.length,
+        mensaje: malas === 1 ? "Hay una celda incorrecta (en rojo)." : `Hay ${malas} celdas incorrectas (en rojo).`,
+      };
+    },
+    revelar() {
+      for (const c of celdas) {
+        c.entrada.value = c.respuesta;
+        c.entrada.readOnly = true;
+        sinMarcas([c.entrada]);
+        c.entrada.classList.add("ok");
+      }
+    },
+  };
+}
+
+function compOrdenar(ej, cambio) {
+  const solucion = ej.lineas.map((t) => ({ texto: t.trim(), sangria: (t.length - t.trimStart().length) / 4 }));
+  const piezas = barajar([
+    ...solucion.map((s, k) => ({ id: `l${k}`, texto: s.texto })),
+    ...ej.distractores.map((t, k) => ({ id: `d${k}`, texto: t.trim() })),
+  ]);
+  let colocadas = [];
+  let cerrada = false;
+  let marcada = null;
+  const programa = el("div", { class: "orden", "aria-label": "Tu programa" });
+  const banco = el("div", { class: "banco", "aria-label": "Líneas disponibles" });
+
+  function sangriaSugerida() {
+    const anterior = colocadas[colocadas.length - 1];
+    if (!anterior) return 0;
+    return anterior.pieza.texto.endsWith(":") ? anterior.sangria + 1 : anterior.sangria;
+  }
+
+  function cambiar() {
+    marcada = null;
+    programa.classList.remove("ok");
+    pintar();
+    cambio();
+  }
+
+  function pintar() {
+    reemplazar(
+      programa,
+      colocadas.length
+        ? colocadas.map((c, i) =>
+            el(
+              "div",
+              { class: "orden__fila" },
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "orden__sangria",
+                  disabled: cerrada || c.sangria === 0,
+                  "aria-label": "Quitar sangría",
+                  onclick: () => {
+                    c.sangria--;
+                    cambiar();
+                  },
+                },
+                "⇤",
+              ),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "orden__sangria",
+                  disabled: cerrada || c.sangria >= 3,
+                  "aria-label": "Agregar sangría",
+                  onclick: () => {
+                    c.sangria++;
+                    cambiar();
+                  },
+                },
+                "⇥",
+              ),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: `orden__linea${i === marcada ? " mal" : ""}`,
+                  disabled: cerrada,
+                  "aria-label": `Línea ${i + 1}: ${c.pieza.texto}. Toca para quitarla.`,
+                  onclick: () => {
+                    colocadas.splice(i, 1);
+                    cambiar();
+                  },
+                },
+                el("span", { class: "guia" }, "·  ".repeat(c.sangria)),
+                resaltar(c.pieza.texto),
+              ),
+            ),
+          )
+        : el("p", { class: "orden__vacio" }, "Toca las líneas de abajo en orden."),
+    );
+    const usadas = new Set(colocadas.map((c) => c.pieza.id));
+    const libres = piezas.filter((p) => !usadas.has(p.id));
+    reemplazar(
+      banco,
+      libres.length
+        ? libres.map((p) =>
+            el(
+              "button",
+              {
+                type: "button",
+                class: "banco__linea",
+                disabled: cerrada,
+                onclick: () => {
+                  colocadas.push({ pieza: p, sangria: sangriaSugerida() });
+                  cambiar();
+                },
+              },
+              resaltar(p.texto),
+            ),
+          )
+        : el("p", { class: "banco__vacio" }, "Ya usaste todas las líneas."),
+    );
+  }
+  pintar();
+
+  function grupoDe(k) {
+    return ej.grupos.find(([a, b]) => k >= a && k <= b);
+  }
+
+  function comparar() {
+    if (colocadas.some((c) => c.pieza.id.startsWith("d"))) {
+      const k = colocadas.findIndex((c) => c.pieza.id.startsWith("d"));
+      return { k, mensaje: "Hay una línea que no va en este programa." };
+    }
+    for (let k = 0; k < solucion.length; k++) {
+      if (k >= colocadas.length) return { k: null, mensaje: `Faltan líneas: el programa completo tiene ${solucion.length}.` };
+      const grupo = grupoDe(k);
+      if (grupo && grupo[0] === k) {
+        const esperado = solucion.slice(grupo[0], grupo[1] + 1).map((s) => `${s.sangria}|${s.texto}`).sort();
+        const puestos = colocadas.slice(grupo[0], grupo[1] + 1).map((c) => `${c.sangria}|${c.pieza.texto}`).sort();
+        if (esperado.join("\n") === puestos.join("\n")) {
+          k = grupo[1];
+          continue;
+        }
+      } else if (grupo) {
+        continue;
+      }
+      const puesto = colocadas[k];
+      const esperado = solucion[k];
+      if (!grupo && puesto.pieza.texto === esperado.texto && puesto.sangria === esperado.sangria) continue;
+      if (grupo) {
+        const dentro = solucion.slice(grupo[0], grupo[1] + 1);
+        const conTexto = colocadas.slice(grupo[0], grupo[1] + 1).findIndex((c) => !dentro.some((s) => s.texto === c.pieza.texto));
+        if (conTexto === -1) return { k: grupo[0], mensaje: "El orden va bien, pero revisa la sangría de las primeras líneas." };
+        return { k: grupo[0] + conTexto, mensaje: `Revisa el orden a partir de la línea ${grupo[0] + conTexto + 1}.` };
+      }
+      if (puesto.pieza.texto === esperado.texto) return { k, mensaje: `La línea ${k + 1} va bien, pero su sangría no. ¿Va dentro de un bloque o fuera?` };
+      return { k, mensaje: `Revisa el orden a partir de la línea ${k + 1}.` };
+    }
+    return null;
+  }
+
+  const etiquetaSalida = ej.entradas ? `Si el usuario escribe ${ej.entradas.join(", ")}, imprime` : "Debe imprimir";
+
+  return {
+    nodo: [
+      el("h2", {}, ej.enunciado),
+      el("div", { class: "grupo" }, el("span", { class: "etiqueta" }, "Tu programa · ⇤ ⇥ cambian la sangría"), programa),
+      el("div", { class: "grupo" }, el("span", { class: "etiqueta" }, "Líneas disponibles"), banco),
+      el("div", { class: "grupo" }, el("span", { class: "etiqueta" }, etiquetaSalida), bloqueSalida(ej.salida)),
+    ],
+    listo: () => colocadas.length > 0,
+    revisar() {
+      const problema = comparar();
+      if (!problema) {
+        cerrada = true;
+        programa.classList.add("ok");
+        pintar();
+        return { ok: true };
+      }
+      marcada = problema.k;
+      pintar();
+      const bien = problema.k === null ? colocadas.length : problema.k;
+      return { ok: false, fraccion: Math.min(bien, solucion.length) / solucion.length, mensaje: problema.mensaje };
+    },
+    revelar() {
+      colocadas = solucion.map((s) => ({ pieza: piezas.find((p) => p.texto === s.texto && p.id.startsWith("l")), sangria: s.sangria }));
+      cerrada = true;
+      marcada = null;
+      programa.classList.add("ok");
+      pintar();
+    },
+  };
+}
+
+// ---------- programa (se ejecuta con Pyodide) ----------
+
+function crearEditor(valorInicial, alCambiar) {
+  const numeros = el("pre", { class: "editor__numeros", "aria-hidden": "true" });
+  const area = el("textarea", {
+    class: "editor__texto",
+    spellcheck: "false",
+    autocapitalize: "off",
+    autocomplete: "off",
+    autocorrect: "off",
+    wrap: "off",
+    "aria-label": "Tu código",
+    placeholder: "Escribe tu código aquí",
+  });
+  area.value = valorInicial;
+  let lineaError = null;
+
+  function pintarNumeros() {
+    const total = Math.max(1, area.value.split("\n").length);
+    numeros.replaceChildren(
+      ...Array.from({ length: total }, (_, i) => el("span", { class: i + 1 === lineaError ? "error" : null }, `${i + 1}\n`)),
+    );
+  }
+
+  area.addEventListener("input", () => {
+    lineaError = null;
+    pintarNumeros();
+    alCambiar(area.value);
+  });
+  area.addEventListener("scroll", () => {
+    numeros.scrollTop = area.scrollTop;
+  });
+  area.addEventListener("keydown", (evento) => {
+    if (evento.key === "Tab" && !evento.shiftKey) {
+      evento.preventDefault();
+      area.setRangeText("    ", area.selectionStart, area.selectionEnd, "end");
+      area.dispatchEvent(new Event("input"));
+    } else if (evento.key === "Enter") {
+      const inicio = area.value.lastIndexOf("\n", area.selectionStart - 1) + 1;
+      const linea = area.value.slice(inicio, area.selectionStart);
+      let sangria = linea.match(/^ */)[0];
+      if (linea.trimEnd().endsWith(":")) sangria += "    ";
+      if (sangria) {
+        evento.preventDefault();
+        area.setRangeText(`\n${sangria}`, area.selectionStart, area.selectionEnd, "end");
+        area.dispatchEvent(new Event("input"));
+      }
+    }
+  });
+  pintarNumeros();
+
+  return {
+    nodo: el("div", { class: "editor" }, numeros, area),
+    area,
+    get valor() {
+      return area.value;
+    },
+    set valor(texto) {
+      area.value = texto;
+      lineaError = null;
+      pintarNumeros();
+    },
+    marcarLinea(numero) {
+      lineaError = numero;
+      pintarNumeros();
+    },
+  };
+}
+
+const ERRORES_SINTAXIS = [
+  [/expected ':'/, "falta poner dos puntos ( : ) al final."],
+  [/was never closed/, "un paréntesis o corchete se abrió y nunca se cerró."],
+  [/unterminated string/, "un texto entre comillas no se cerró."],
+  [/unmatched/, "sobra un paréntesis o corchete de cierre."],
+  [/expected an indented block/, "después de los dos puntos, la siguiente línea debe llevar sangría."],
+  [/unexpected indent/, "esta línea tiene sangría de más."],
+  [/unindent does not match/, "la sangría no coincide con las líneas de arriba."],
+  [/cannot assign to|Maybe you meant '=='/, "para comparar se usa == (con = se asigna)."],
+  [/'return' outside function/, "hay un return fuera de la función: revisa la sangría."],
+  [/invalid syntax/, "Python no entiende esta línea: revisa dos puntos, paréntesis, comas, comillas y = contra ==."],
+];
+
+const ERRORES_EJECUCION = {
+  NameError: "usas un nombre que Python no conoce: revisa cómo lo escribiste y que exista antes de usarlo.",
+  TypeError: "se mezclaron tipos de datos: ¿convertiste el input() con int() o float()? ¿la función regresa algo?",
+  ValueError: "un dato no se pudo convertir, por ejemplo int() de un número con decimales.",
+  ZeroDivisionError: "se dividió entre cero: revisa el divisor con un if antes de dividir.",
+  IndexError: "usaste un índice que no existe: el último es len(lista) - 1.",
+  UnboundLocalError: "usaste una variable dentro de la función antes de darle valor.",
+  AttributeError: "ese método no existe; revisa el nombre (por ejemplo append, no add).",
+};
+
+function explicarError(error) {
+  const donde = error.linea ? `Línea ${error.linea}: ` : "";
+  if (["SyntaxError", "IndentationError", "TabError"].includes(error.tipo)) {
+    const regla = ERRORES_SINTAXIS.find(([patron]) => patron.test(error.mensaje));
+    return { titulo: "Error de sintaxis", texto: donde + (regla ? regla[1] : "Python no puede leer esta parte.") };
+  }
+  return { titulo: `El programa se detuvo (${error.tipo})`, texto: donde + (ERRORES_EJECUCION[error.tipo] || `ocurrió ${error.tipo}.`) };
+}
+
+function compPrograma(ej, cambio, modo) {
+  const clave = `codigo:${ej.id}`;
+  const enSimulacro = modo === "simulacro";
+  const inicial = enSimulacro ? ej.inicial || "" : almacen.leer(clave, ej.inicial || "");
+  const editor = crearEditor(inicial, (texto) => {
+    if (!enSimulacro) almacen.guardar(clave, texto);
+    cambio();
+  });
+  const consolaPrueba = el("div", { class: "grupo", "aria-live": "polite" });
+  preparar().catch(() => {});
+
+  const ejemplo = ej.ejemplo
+    ? el(
+        "pre",
+        { class: "codigo", "aria-label": "Ejemplo de ejecución" },
+        ej.ejemplo.entradas.map((entrada) => [el("span", { class: "prompt" }, ">>> "), `${entrada}\n`]),
+        ej.ejemplo.salida.join("\n"),
+      )
+    : el(
+        "pre",
+        { class: "codigo", "aria-label": "Ejemplo de uso" },
+        ej.ejemplo_llamadas.map((e) => [el("span", { class: "prompt" }, ">>> "), resaltar(e.llamada), `\n${e.resultado}\n`]),
+      );
+
+  async function probar(botonProbar) {
+    botonProbar.disabled = true;
+    reemplazar(consolaPrueba, el("p", { class: "texto-suave" }, "Ejecutando…"));
+    let codigo = editor.valor;
+    let problema = { pruebas: [], ejemplo: { entradas: ej.ejemplo ? ej.ejemplo.entradas : [] } };
+    if (ej.ejemplo_llamadas) codigo += "\n\n" + ej.ejemplo_llamadas.map((e) => `print(${e.llamada})`).join("\n") + "\n";
+    try {
+      const reporte = await evaluar(codigo, problema);
+      if (reporte.error && ["SyntaxError", "IndentationError", "TabError"].includes(reporte.error.tipo)) {
+        const info = explicarError(reporte.error);
+        if (reporte.error.linea) editor.marcarLinea(reporte.error.linea);
+        reemplazar(consolaPrueba, cajaRetro("mal", info.titulo, info.texto));
+      } else {
+        reemplazar(
+          consolaPrueba,
+          el("span", { class: "etiqueta" }, "Así corre con el ejemplo"),
+          el("pre", { class: "codigo salida" }, reporte.consola || "(no imprimió nada)"),
+        );
+      }
+    } catch (error) {
+      reemplazar(consolaPrueba, el("p", { class: "texto-suave" }, error.message === "TIEMPO" ? "Tardó demasiado y se detuvo: ¿hay un ciclo infinito?" : "No se pudo cargar Python. Revisa tu internet."));
+    } finally {
+      botonProbar.disabled = false;
+    }
+  }
+
+  const botonProbar = boton("▶ Probar con el ejemplo", () => probar(botonProbar), "boton--claro");
+
+  return {
+    nodo: [
+      el("h1", {}, ej.titulo),
+      el("p", {}, ej.descripcion),
+      el(
+        "div",
+        { class: "datos" },
+        el("div", { class: "dato" }, el("span", {}, "Entrada"), el("span", {}, ej.entrada)),
+        el(
+          "div",
+          { class: "dato" },
+          el("span", {}, "Salida"),
+          Array.isArray(ej.salida) ? el("ul", { class: "lista-salida" }, ej.salida.map((l) => el("li", {}, l))) : el("span", {}, ej.salida),
+        ),
+        ej.usa ? el("div", { class: "dato usa" }, el("span", {}, "Usa"), el("span", {}, el("code", {}, ej.usa))) : null,
+        el("div", { class: "dato" }, el("span", {}, "Ejemplo"), ejemplo),
+      ),
+      editor.nodo,
+      enSimulacro ? [el("div", { class: "probar" }, botonProbar), consolaPrueba] : null,
+    ],
+    esPrograma: true,
+    listo: () => editor.valor.trim() !== "" && editor.valor.trim() !== (ej.inicial || "").trim(),
+    async revisar() {
+      const codigo = editor.valor;
+      let reporte;
+      try {
+        reporte = await evaluar(codigo, ej);
+      } catch (error) {
+        if (error.message === "TIEMPO") {
+          return { ok: false, fraccion: 0, mensaje: "Tu programa tardó demasiado y se detuvo: ¿hay un ciclo infinito o un input() de más?" };
+        }
+        return { sigue: true, mensaje: "No se pudo cargar Python. Revisa tu internet y vuelve a intentarlo." };
+      }
+      if (reporte.error?.linea) editor.marcarLinea(reporte.error.linea);
+      const total = reporte.pruebas.length;
+      const pasadas = reporte.pruebas.filter((p) => p.ok).length;
+      const ok = !reporte.error && total > 0 && pasadas === total && reporte.avisos.length === 0;
+      if (ok) {
+        if (!enSimulacro) estado.codigos[ej.id] = codigo;
+        editor.area.readOnly = true;
+        return { ok: true };
+      }
+      let mensaje = `Pasaste ${pasadas} de ${total} casos de prueba.`;
+      if (reporte.error && !total) {
+        const info = explicarError(reporte.error);
+        mensaje = `${info.titulo}. ${info.texto}`;
+      } else if (pasadas === total && reporte.avisos.length) {
+        mensaje = "Funciona, pero no cumple una regla del ejercicio.";
+      }
+      const fallidas = reporte.pruebas.filter((p) => !p.ok);
+      const detalle = [
+        reporte.avisos.map((a) => el("p", { class: "pista" }, a)),
+        fallidas.length
+          ? el(
+              "ul",
+              { class: "casos" },
+              fallidas.slice(0, 2).map((p) => el("li", { class: "mal" }, el("strong", {}, p.descripcion), el("span", {}, p.detalle))),
+            )
+          : null,
+        reporte.consola
+          ? el("details", { class: "consola" }, el("summary", {}, "Ver lo que imprimió con el ejemplo"), el("pre", { class: "codigo" }, reporte.consola))
+          : null,
+      ];
+      return { ok: false, fraccion: total ? (reporte.error ? 0 : pasadas / total) : 0, mensaje, detalle };
+    },
+    revelar() {
+      const guardado = estado.codigos[ej.id];
+      if (guardado && !enSimulacro) editor.valor = guardado;
+      editor.area.readOnly = true;
+      botonProbar.disabled = true;
+    },
+    desbloquear() {
+      editor.area.readOnly = false;
+    },
+  };
+}
+
+const COMPONENTES = {
+  opcion: compOpcion,
+  salida: compSalida,
+  completar: compCompletar,
+  error: compError,
+  traza: compTraza,
+  ordenar: compOrdenar,
+  programa: compPrograma,
+};
+
+// =====================================================================
+// Inicio
+// =====================================================================
+
+function vistaInicio() {
+  const resueltos = datos.ejercicios.filter(resuelto).length;
+  const empezado = resueltos > 0;
+  const mejor = estado.simulacro?.mejor;
+  const preguntasSim = armarSimulacro().length;
+
+  return [
+    el(
+      "div",
+      { class: "encabezado" },
+      el("h1", {}, "Repaso de Python"),
+      el("p", { class: "texto-suave" }, "Funciones, depuración, ciclos y listas. Todo se resuelve aquí."),
+    ),
+    el(
+      "div",
+      { class: "marcador" },
+      el("div", {}, el("strong", {}, puntosTotales()), el("span", {}, `de ${puntosPosibles()} ★`)),
+      el("div", {}, el("strong", {}, resueltos), el("span", {}, `de ${datos.ejercicios.length} ejercicios`)),
+    ),
+    el(
+      "a",
+      { class: "tarjeta-sim", href: "#/simulacro" },
+      el("span", { class: "tarjeta-sim__icono", "aria-hidden": "true" }, "⏱"),
+      el(
+        "span",
+        { class: "tarjeta-sim__texto" },
+        el("strong", {}, simEnCurso() ? "Simulacro en curso" : "Simulacro de examen"),
+        el("span", {}, simEnCurso() ? `Quedan ${formatoTiempo(sim.fin - Date.now())} · toca para seguir` : `${datos.simulacro.minutos} min · ${preguntasSim} preguntas de todos los temas`),
+      ),
+      mejor !== undefined && mejor !== null ? el("span", { class: "tarjeta-sim__dato" }, "Mejor", el("br"), `${mejor}/100`) : null,
+    ),
+    el("p", { class: "subtitulo" }, "Practica por tema"),
+    el(
+      "nav",
+      { class: "lista", "aria-label": "Temas" },
+      datos.temas.map((tema, i) => {
+        const lista = datos.ejercicios.filter((e) => e.tema === tema.id);
+        const hechos = lista.filter(resuelto).length;
+        const pendiente = lista.find((e) => !resuelto(e)) || lista[0];
+        const completo = hechos === lista.length;
+        return el(
+          "a",
+          { class: `fila${completo ? " completa" : ""}`, href: `#/ej/${pendiente.id}` },
+          el("span", { class: "fila__numero" }, completo ? "✓" : i + 1),
+          el("span", { class: "fila__texto" }, el("strong", {}, tema.nombre), el("span", {}, tema.detalle)),
+          el("span", { class: "fila__avance" }, `${hechos}/${lista.length}`),
+        );
+      }),
+    ),
+    el(
+      "details",
+      { class: "ayuda" },
+      el("summary", {}, "¿Cómo se ganan las ★?"),
+      el(
+        "ul",
+        {},
+        Object.values(datos.tipos).map((t) => el("li", {}, `${t.nombre}: ${t.puntos} ★`)),
+        el("li", {}, "Cada intento fallido o pista usada resta 1 ★ a ese ejercicio (mínimo 1)."),
+        el("li", {}, "En opción múltiple solo hay una oportunidad."),
+        el("li", {}, "Si ves la respuesta, ese ejercicio queda en 0 ★."),
+      ),
+    ),
+    empezado
+      ? el(
+          "div",
+          { class: "pie-inicio" },
+          boton(
+            "Reiniciar puntos",
+            () => {
+              if (!confirm("¿Borrar todos tus puntos y empezar de cero?")) return;
+              estado.hechos = {};
+              estado.fallos = {};
+              estado.pistas = {};
+              estado.codigos = {};
+              repasos.clear();
+              guardarEstado();
+              mostrar();
+            },
+            "boton--enlace",
+          ),
+        )
+      : null,
+    barraAcciones(boton(empezado ? "Continuar →" : "Empezar →", () => ir(siguientePendiente()))),
+  ];
+}
+
+// =====================================================================
+// Práctica: un ejercicio
+// =====================================================================
+
+function vistaEjercicio(ej) {
+  const tema = temaDe(ej);
+  const tipo = datos.tipos[ej.tipo];
+  const delTema = datos.ejercicios.filter((e) => e.tema === ej.tema);
+  const posicion = delTema.indexOf(ej) + 1;
+  const indice = datos.ejercicios.indexOf(ej);
+  const anterior = datos.ejercicios[indice - 1];
+  const posterior = datos.ejercicios[indice + 1];
+  const rutaSiguiente = posterior ? `#/ej/${posterior.id}` : "#/";
+  const repasando = repasos.has(ej.id);
+  const sinPuntos = () => repasando || resuelto(ej);
+
+  const chipValor = el("span", { class: "chip" });
+  function pintarChip() {
+    if (resuelto(ej)) {
+      const ganados = estado.hechos[ej.id];
+      chipValor.className = `chip${ganados ? " chip--ok" : ""}`;
+      chipValor.textContent = ganados ? `✓ +${ganados} ★` : "0 ★";
+    } else {
+      chipValor.className = "chip";
+      chipValor.textContent = `${valorActual(ej)} ★`;
+    }
+  }
+  pintarChip();
+
+  const retro = el("div", { class: "retro-zona", "aria-live": "polite" });
+  const zonaPistas = el("div", { class: "pistas" });
+  let terminado = false;
+
+  const comp = COMPONENTES[ej.tipo](ej, actualizarBoton, "practica");
+  const principal = boton("Revisar", accion);
+  const verRespuesta = boton("Ver la respuesta (0 ★)", revelar, "boton--enlace ver-respuesta");
+  verRespuesta.hidden = true;
+
+  function actualizarBoton() {
+    if (terminado) {
+      principal.textContent = posterior ? "Siguiente →" : "Volver al inicio";
+      principal.disabled = false;
+    } else {
+      principal.textContent = "Revisar";
+      principal.disabled = !comp.listo();
+    }
+  }
+
+  function pintarPistas() {
+    if (!ej.pistas) return;
+    const vistas = estado.pistas[ej.id] || 0;
+    const quedan = ej.pistas.length - vistas;
+    const cuesta = !sinPuntos() && valorActual(ej) > 1;
+    reemplazar(
+      zonaPistas,
+      ej.pistas.slice(0, vistas).map((texto) => el("div", { class: "pista" }, `💡 ${texto}`)),
+      quedan > 0 && !terminado
+        ? boton(
+            `💡 ${vistas ? "Otra pista" : "Pista"}${cuesta ? " (−1 ★)" : ""}`,
+            () => {
+              estado.pistas[ej.id] = vistas + 1;
+              guardarEstado();
+              pintarChip();
+              pintarPistas();
+            },
+            "boton--enlace",
+          )
+        : null,
+    );
+  }
+
+  function terminar(acerto, ganados, mensaje) {
+    terminado = true;
+    let titulo;
+    if (acerto) titulo = ganados ? `¡Correcto! +${ganados} ★` : "¡Correcto!";
+    else titulo = "Respuesta correcta";
+    reemplazar(
+      retro,
+      mensaje ? cajaRetro("mal", "No es esa", mensaje) : null,
+      cajaRetro(acerto ? "ok" : "info", titulo, ej.explicacion || (ej.tipo === "programa" ? "Tu programa pasó todos los casos de prueba." : "")),
+    );
+    verRespuesta.hidden = true;
+    pintarChip();
+    pintarPistas();
+    actualizarBoton();
+    enfocarRetro(retro);
+  }
+
+  function revelar() {
+    comp.revelar();
+    if (!sinPuntos()) {
+      estado.hechos[ej.id] = 0;
+      guardarEstado();
+    }
+    terminar(false, 0);
+  }
+
+  async function accion() {
+    if (terminado) return ir(rutaSiguiente);
+    if (!comp.listo()) return;
+    principal.disabled = true;
+    principal.textContent = "Revisando…";
+    const r = await comp.revisar();
+    if (r.sigue) {
+      reemplazar(retro, cajaRetro("info", "Vas bien", r.mensaje));
+      enfocarRetro(retro);
+      actualizarBoton();
+      return;
+    }
+    if (r.ok) {
+      let ganados = 0;
+      if (!sinPuntos()) {
+        ganados = valorActual(ej);
+        estado.hechos[ej.id] = ganados;
+        guardarEstado();
+        celebrar(ganados);
+      } else if (ej.tipo === "programa") {
+        guardarEstado();
+      }
+      terminar(true, ganados);
+      return;
+    }
+    if (comp.unaOportunidad) {
+      if (!sinPuntos()) {
+        estado.hechos[ej.id] = 0;
+        guardarEstado();
+      }
+      comp.revelar();
+      terminar(false, 0, r.mensaje);
+      return;
+    }
+    if (!comp.esPrograma && !sinPuntos()) {
+      estado.fallos[ej.id] = (estado.fallos[ej.id] || 0) + 1;
+      guardarEstado();
+      pintarChip();
+      pintarPistas();
+    }
+    reemplazar(retro, cajaRetro("mal", "Todavía no", r.mensaje, r.detalle ? el("div", { class: "detalle" }, r.detalle) : null));
+    enfocarRetro(retro);
+    const intentos = (estado.fallos[ej.id] || 0) + (repasando ? 2 : 0);
+    if (!comp.esPrograma && intentos >= 2) verRespuesta.hidden = false;
+    actualizarBoton();
+  }
+
+  pintarPistas();
+
+  const yaResuelto = resuelto(ej) && !repasando;
+  if (yaResuelto) {
+    comp.revelar();
+    terminado = true;
+    const ganados = estado.hechos[ej.id];
+    reemplazar(
+      retro,
+      cajaRetro(ganados ? "ok" : "info", ganados ? `Ya lo resolviste: +${ganados} ★` : "Ya viste la respuesta", ej.explicacion || ""),
+      boton(
+        "↺ Hacerlo otra vez (sin puntos)",
+        () => {
+          repasos.add(ej.id);
+          mostrar();
+        },
+        "boton--enlace ver-respuesta",
+      ),
+    );
+  }
+  actualizarBoton();
+
+  return [
+    el(
+      "div",
+      { class: "encabezado" },
+      el(
+        "div",
+        { class: "encabezado__fila" },
+        el("span", { class: "etiqueta" }, `${tema.nombre} · ${posicion} de ${delTema.length}`),
+        el("span", { class: "chips" }, el("span", { class: "chip chip--tipo" }, tipo.nombre), chipValor),
+      ),
+      el("div", { class: "progreso" }, el("span", { style: `width:${(posicion / delTema.length) * 100}%` })),
+    ),
+    comp.nodo,
+    zonaPistas,
+    retro,
+    verRespuesta,
+    barraAcciones(
+      boton("←", () => ir(anterior ? `#/ej/${anterior.id}` : "#/"), "boton--claro boton--icono"),
+      principal,
+      boton("→", () => ir(rutaSiguiente), "boton--claro boton--icono"),
+    ),
+  ];
+}
+
+// =====================================================================
+// Simulacro
+// =====================================================================
+
+function armarSimulacro() {
+  const cfg = datos.simulacro;
+  const elegidos = [];
+  for (const tema of datos.temas) {
+    if ((cfg.sin_tema || []).includes(tema.id)) continue;
+    const candidatos = barajar(datos.ejercicios.filter((e) => e.tema === tema.id && e.tipo !== "programa"));
+    const delTema = [];
+    for (const e of candidatos) {
+      if (delTema.length < cfg.por_tema && !delTema.some((x) => x.tipo === e.tipo)) delTema.push(e);
+    }
+    for (const e of candidatos) {
+      if (delTema.length < cfg.por_tema && !delTema.includes(e)) delTema.push(e);
+    }
+    elegidos.push(...delTema);
+  }
+  const programas = barajar(datos.ejercicios.filter((e) => e.tipo === "programa")).slice(0, cfg.programas);
+  return [...elegidos, ...programas];
+}
+
+function iniciarSimulacro() {
+  const preguntas = armarSimulacro();
+  sim = {
+    ids: preguntas.map((e) => e.id),
+    res: {},
+    inicio: Date.now(),
+    fin: Date.now() + datos.simulacro.minutos * 60000,
+    terminado: false,
+    agotado: false,
+  };
+  if (preguntas.some((e) => e.tipo === "programa")) preparar().catch(() => {});
+  clearInterval(relojSim);
+  relojSim = setInterval(tic, 1000);
+  pintarPuntos();
+  ir("#/simulacro/1");
+}
+
+function tic() {
+  if (!simEnCurso()) {
+    clearInterval(relojSim);
+    pintarPuntos();
+    return;
+  }
+  if (Date.now() >= sim.fin) {
+    sim.agotado = true;
+    terminarSimulacro();
+    return;
+  }
+  pintarPuntos();
+}
+
+function terminarSimulacro() {
+  if (!sim || sim.terminado) return;
+  sim.terminado = true;
+  sim.final = Math.min(Date.now(), sim.fin);
+  clearInterval(relojSim);
+  const calificacion = calificacionSim();
+  const previo = estado.simulacro || {};
+  estado.simulacro = {
+    mejor: Math.max(previo.mejor ?? 0, calificacion),
+    ultimo: calificacion,
+    veces: (previo.veces || 0) + 1,
+  };
+  guardarEstado();
+  ir("#/simulacro/fin");
+}
+
+function calificacionSim() {
+  let obtenidos = 0;
+  let posibles = 0;
+  for (const id of sim.ids) {
+    const ej = datos.ejercicios.find((e) => e.id === id);
+    posibles += puntosDe(ej);
+    obtenidos += puntosDe(ej) * (sim.res[id]?.fraccion || 0);
+  }
+  return Math.round((100 * obtenidos) / posibles);
+}
+
+function vistaSimInicio() {
+  if (simEnCurso()) {
+    const respondidas = Object.keys(sim.res).length;
+    return [
+      el("div", { class: "encabezado" }, el("h1", {}, "Simulacro en curso"), el("p", { class: "texto-suave" }, `Llevas ${respondidas} de ${sim.ids.length}. Quedan ${formatoTiempo(sim.fin - Date.now())}.`)),
+      el("div", { class: "pie-inicio" }, boton("Terminar ahora y ver resultado", () => {
+        if (confirm("¿Terminar el simulacro? Las preguntas sin responder cuentan 0.")) terminarSimulacro();
+      }, "boton--enlace")),
+      barraAcciones(boton("Seguir →", () => ir(`#/simulacro/${Math.min(sim.ids.length, respondidas + 1)}`))),
+    ];
+  }
+  const total = armarSimulacro().length;
+  return [
+    el("div", { class: "encabezado" }, el("h1", {}, "Simulacro de examen"), el("p", { class: "texto-suave" }, "Preguntas al azar de todos los temas, contra reloj.")),
+    el(
+      "ul",
+      { class: "reglas" },
+      el("li", {}, `${total} preguntas en ${datos.simulacro.minutos} minutos. El tiempo corre arriba a la derecha.`),
+      el("li", {}, "Una sola oportunidad por pregunta y sin pistas."),
+      el("li", {}, "En el programa puedes probar tu código con el ejemplo antes de entregarlo."),
+      el("li", {}, "Las respuestas a medias cuentan parcial: huecos, celdas o casos de prueba correctos."),
+      el("li", {}, "Al final ves tu calificación y qué temas repasar."),
+    ),
+    estado.simulacro ? el("p", { class: "texto-suave" }, `Tu mejor calificación: ${estado.simulacro.mejor}/100 · última: ${estado.simulacro.ultimo}/100.`) : null,
+    barraAcciones(boton("←", () => ir("#/"), "boton--claro boton--icono"), boton("Empezar ⏱", iniciarSimulacro)),
+  ];
+}
+
+function vistaSimPregunta(numero) {
+  const id = sim.ids[numero - 1];
+  const ej = datos.ejercicios.find((e) => e.id === id);
+  const total = sim.ids.length;
+  const ultimo = numero === total;
+  const tipo = datos.tipos[ej.tipo];
+  const retro = el("div", { class: "retro-zona", "aria-live": "polite" });
+  const comp = COMPONENTES[ej.tipo](ej, actualizarBoton, "simulacro");
+  const principal = boton(ej.tipo === "programa" ? "Entregar" : "Revisar", accion);
+  const saltar = boton("Saltar", () => {
+    if (!sim.res[id]) sim.res[id] = { fraccion: 0, saltada: true };
+    avanzar();
+  }, "boton--claro");
+
+  function avanzar() {
+    if (ultimo) terminarSimulacro();
+    else ir(`#/simulacro/${numero + 1}`);
+  }
+
+  function actualizarBoton() {
+    if (sim.res[id]) {
+      principal.textContent = ultimo ? "Ver resultado" : "Siguiente →";
+      principal.disabled = false;
+      saltar.hidden = true;
+    } else {
+      principal.textContent = ej.tipo === "programa" ? "Entregar" : "Revisar";
+      principal.disabled = !comp.listo();
+    }
+  }
+
+  function mostrarResultado(res, mensaje, detalle) {
+    const clase = res.fraccion >= 1 ? "ok" : res.fraccion > 0 ? "info" : "mal";
+    const titulo = res.saltada ? "Pregunta saltada" : res.fraccion >= 1 ? "¡Correcto!" : res.fraccion > 0 ? `Crédito parcial: ${Math.round(res.fraccion * 100)} %` : "Incorrecto";
+    reemplazar(
+      retro,
+      cajaRetro(clase, titulo, mensaje || null, detalle ? el("div", { class: "detalle" }, detalle) : null),
+      ej.explicacion && res.fraccion < 1 ? cajaRetro("info", "Explicación", ej.explicacion) : null,
+    );
+  }
+
+  async function accion() {
+    if (sim.res[id]) return avanzar();
+    if (!comp.listo()) return;
+    principal.disabled = true;
+    principal.textContent = "Revisando…";
+    const r = await comp.revisar();
+    if (!simEnCurso()) return;
+    if (r.sigue) {
+      reemplazar(retro, cajaRetro("info", "Vas bien", r.mensaje));
+      enfocarRetro(retro);
+      actualizarBoton();
+      return;
+    }
+    const res = { fraccion: r.ok ? 1 : r.fraccion || 0 };
+    sim.res[id] = res;
+    if (!r.ok) comp.revelar();
+    mostrarResultado(res, r.ok ? null : r.mensaje, r.detalle);
+    enfocarRetro(retro);
+    actualizarBoton();
+  }
+
+  if (sim.res[id]) {
+    comp.revelar();
+    mostrarResultado(sim.res[id], null, null);
+  }
+  actualizarBoton();
+
+  return [
+    el(
+      "div",
+      { class: "encabezado" },
+      el(
+        "div",
+        { class: "encabezado__fila" },
+        el("span", { class: "etiqueta" }, `${numero} de ${total} · ${temaDe(ej).nombre}`),
+        el("span", { class: "chip chip--tipo" }, tipo.nombre),
+      ),
+      el("div", { class: "progreso" }, el("span", { style: `width:${(numero / total) * 100}%` })),
+    ),
+    comp.nodo,
+    retro,
+    barraAcciones(saltar, principal),
+  ];
+}
+
+function vistaSimFin() {
+  const calificacion = calificacionSim();
+  const usado = (sim.final || Date.now()) - sim.inicio;
+  const clase = calificacion >= 80 ? "ok" : calificacion >= 60 ? "medio" : "mal";
+  const porTema = datos.temas
+    .map((tema) => {
+      const ids = sim.ids.filter((id) => datos.ejercicios.find((e) => e.id === id).tema === tema.id);
+      const aciertos = ids.reduce((s, id) => s + (sim.res[id]?.fraccion || 0), 0);
+      return { tema, total: ids.length, aciertos };
+    })
+    .filter((t) => t.total > 0);
+  const fallados = sim.ids.map((id) => datos.ejercicios.find((e) => e.id === id)).filter((e) => (sim.res[e.id]?.fraccion || 0) < 1);
+
+  return [
+    el(
+      "div",
+      { class: `resultado ${clase}` },
+      el("div", { class: "resultado__icono" }, clase === "ok" ? "★" : clase === "medio" ? "≈" : "✗"),
+      el("p", { class: "calificacion" }, calificacion),
+      el("p", { class: "texto-suave" }, `de 100 · ${sim.agotado ? "se acabó el tiempo" : `en ${formatoTiempo(usado)} min`}`),
+    ),
+    el("p", { class: "subtitulo" }, "Por tema"),
+    el(
+      "div",
+      { class: "temas-sim" },
+      porTema.map(({ tema, total, aciertos }) => {
+        const proporcion = aciertos / total;
+        const nivel = proporcion >= 0.8 ? "" : proporcion >= 0.5 ? " media" : " baja";
+        return el(
+          "div",
+          { class: "tema-sim" },
+          el("div", { class: "tema-sim__fila" }, el("span", {}, tema.nombre), el("span", {}, `${Math.round(aciertos * 10) / 10} de ${total}`)),
+          el("div", { class: `barra-avance${nivel}` }, el("span", { style: `width:${Math.max(4, proporcion * 100)}%` })),
+        );
+      }),
+    ),
+    fallados.length
+      ? [
+          el("p", { class: "subtitulo" }, "Para repasar"),
+          el(
+            "nav",
+            { class: "lista", "aria-label": "Ejercicios para repasar" },
+            fallados.map((e) =>
+              el(
+                "a",
+                {
+                  class: "fila",
+                  href: `#/ej/${e.id}`,
+                  onclick: () => {
+                    if (resuelto(e)) repasos.add(e.id);
+                  },
+                },
+                el("span", { class: "fila__numero" }, "↺"),
+                el("span", { class: "fila__texto" }, el("strong", {}, datos.tipos[e.tipo].nombre), el("span", {}, temaDe(e).nombre)),
+                el("span", { class: "fila__avance" }, `${Math.round((sim.res[e.id]?.fraccion || 0) * 100)} %`),
+              ),
+            ),
+          ),
+        ]
+      : el("p", { class: "texto-suave" }, "¡Todo correcto! Prueba otro simulacro: las preguntas cambian."),
+    barraAcciones(boton("Inicio", () => ir("#/"), "boton--claro"), boton("Otro simulacro", iniciarSimulacro)),
+  ];
+}
+
+// =====================================================================
+// Navegación
+// =====================================================================
+
+function mostrar() {
+  if (!datos) return;
+  const ruta = location.hash.replace(/^#\/?/, "");
+  let contenido = null;
+  let titulo = "Repaso TC1038";
+
+  if (ruta === "simulacro") {
+    contenido = vistaSimInicio();
+    titulo = "Simulacro · Repaso TC1038";
+  } else if (ruta === "simulacro/fin") {
+    if (sim && sim.terminado) contenido = vistaSimFin();
+    else if (sim) contenido = vistaSimInicio();
+    titulo = "Resultado del simulacro · Repaso TC1038";
+  } else if (ruta.startsWith("simulacro/")) {
+    const numero = Number(ruta.slice(10));
+    if (simEnCurso() && numero >= 1 && numero <= sim.ids.length) {
+      contenido = vistaSimPregunta(numero);
+      titulo = `Simulacro ${numero} · Repaso TC1038`;
+    } else if (sim && sim.terminado) {
+      contenido = vistaSimFin();
+    } else {
+      contenido = vistaSimInicio();
+    }
+  } else if (ruta.startsWith("ej/")) {
+    const ejercicio = datos.ejercicios.find((e) => e.id === ruta.slice(3));
+    if (ejercicio) {
+      contenido = vistaEjercicio(ejercicio);
+      titulo = `${temaDe(ejercicio).nombre} · Repaso TC1038`;
+    }
+  }
+  if (!contenido) contenido = vistaInicio();
+  document.title = titulo;
+  reemplazar(vista, contenido);
+  pintarPuntos();
+  window.scrollTo(0, 0);
+  vista.focus({ preventScroll: true });
+}
+
+async function iniciar() {
+  try {
+    const respuesta = await fetch("data/ejercicios.json", { cache: "no-cache" });
+    datos = await respuesta.json();
+  } catch {
+    reemplazar(vista, el("p", {}, "No se pudieron cargar los ejercicios. Recarga la página."));
+    return;
+  }
+  window.addEventListener("hashchange", mostrar);
+  // Enter en un hueco o una celda pasa al siguiente; en el último, revisa.
+  vista.addEventListener("keydown", (evento) => {
+    const actual = evento.target;
+    if (evento.key !== "Enter" || !actual.matches?.(".hueco, .celda")) return;
+    evento.preventDefault();
+    const todos = [...vista.querySelectorAll(".hueco, .celda")].filter((e) => !e.readOnly);
+    const siguiente = todos[todos.indexOf(actual) + 1];
+    if (siguiente) siguiente.focus();
+    else document.querySelector(".acciones .boton:not(.boton--claro)")?.click();
+  });
+  mostrar();
+}
+
+iniciar();
