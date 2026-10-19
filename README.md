@@ -4,6 +4,10 @@ App web para repasar el segundo examen de Fundamentos de Programación. Funciona
 
 ## Qué tiene
 
+**Bienvenida:** la primera vez se pide nombre y matrícula (sin validar) y se muestran instrucciones básicas. Se pueden corregir con «Cambiar» en la pantalla de inicio.
+
+**Puntuación final:** el botón «📸 Ver mi puntuación final» muestra en una sola pantalla el nombre, la matrícula, las ★ y los ejercicios resueltos (en total y por tema), con la fecha y la hora. Es la pantalla de la que los alumnos toman captura para subirla a Canvas.
+
 **60 ejercicios cortos** en 6 temas, que siguen las sesiones 11 a 17:
 
 | Tema | Ejercicios |
@@ -105,13 +109,13 @@ Formatos rápidos:
 
 ## Cómo usarlo en clase (sugerencia)
 
-1. Que todos pulsen «Reiniciar puntos» si ya la habían abierto.
-2. 25–30 min de práctica por tema, en el orden que quieran; gana quien tenga más ★.
-3. Cierre: comenten los ejercicios en los que más se equivocaron.
+1. Al abrirla, cada alumno escribe su nombre y matrícula. Si ya la había abierto antes, que pulse «Reiniciar puntos».
+2. Práctica libre durante la clase, en el orden que quieran.
+3. Al final: «📸 Ver mi puntuación final», captura de pantalla y entrega en Canvas. La fecha y la hora en la captura ayudan a ver que es de esa sesión.
 
 ## Límites conocidos
 
-- Las respuestas están en `ejercicios.json` y un alumno curioso podría leerlas. Para una herramienta de práctica no importa.
+- Las respuestas están en `ejercicios.json` y un alumno curioso podría leerlas. Los puntos se guardan en el navegador del alumno, así que alguien con conocimientos podría modificarlos. Para una actividad de práctica no importa.
 - En «¿Qué imprime?» se ignoran los espacios de más y los renglones vacíos, y las comillas dobles o sencillas dan lo mismo; las mayúsculas sí cuentan (`True` ≠ `true`).
 - Los programas necesitan internet la primera vez para descargar Pyodide (~10 MB). Los demás tipos funcionan sin Python.
 - Los ejercicios de la sesión 18 (tuplas y diccionarios) todavía no están incluidos.

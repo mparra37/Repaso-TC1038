@@ -102,7 +102,7 @@ function entradasTexto(entradas) {
 
 // ---------- progreso y puntos ----------
 
-const estado = Object.assign({ hechos: {}, fallos: {}, pistas: {}, codigos: {} }, almacen.leer("estado", {}));
+const estado = Object.assign({ alumno: null, hechos: {}, fallos: {}, pistas: {}, codigos: {} }, almacen.leer("estado", {}));
 
 function guardarEstado() {
   almacen.guardar("estado", estado);
@@ -950,7 +950,12 @@ function vistaInicio() {
       "div",
       { class: "encabezado" },
       el("h1", {}, "Repaso de Python"),
-      el("p", { class: "texto-suave" }, "Funciones, ciclos y listas. Todo se resuelve aquí."),
+      el(
+        "p",
+        { class: "alumno" },
+        el("span", {}, `${nombreAlumno()} · ${matriculaAlumno()}`),
+        el("a", { href: "#/datos" }, "Cambiar"),
+      ),
     ),
     el(
       "div",
@@ -958,6 +963,7 @@ function vistaInicio() {
       el("div", {}, el("strong", {}, puntosTotales()), el("span", {}, `de ${puntosPosibles()} ★`)),
       el("div", {}, el("strong", {}, resueltos), el("span", {}, `de ${datos.ejercicios.length} ejercicios`)),
     ),
+    el("a", { class: "boton boton--claro boton--grande", href: "#/resumen" }, "📸 Ver mi puntuación final"),
     el("p", { class: "subtitulo" }, "Temas"),
     el(
       "nav",
@@ -1204,6 +1210,122 @@ function vistaEjercicio(ej) {
 }
 
 // =====================================================================
+// Bienvenida: nombre, matrícula e instrucciones
+// =====================================================================
+
+function nombreAlumno() {
+  return estado.alumno?.nombre || "Sin nombre";
+}
+
+function matriculaAlumno() {
+  return estado.alumno?.matricula || "Sin matrícula";
+}
+
+function vistaBienvenida() {
+  const nombre = el("input", { class: "campo", id: "nombre", autocomplete: "name", enterkeyhint: "next" });
+  const matricula = el("input", { class: "campo", id: "matricula", autocomplete: "off", autocapitalize: "characters", spellcheck: "false", enterkeyhint: "done" });
+  nombre.value = estado.alumno?.nombre || "";
+  matricula.value = estado.alumno?.matricula || "";
+
+  function guardar() {
+    estado.alumno = { nombre: nombre.value.trim(), matricula: matricula.value.trim() };
+    guardarEstado();
+    ir("#/");
+  }
+  nombre.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      matricula.focus();
+    }
+  });
+  matricula.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      guardar();
+    }
+  });
+
+  return [
+    el(
+      "div",
+      { class: "encabezado" },
+      el("span", { class: "etiqueta" }, "TC1038 · Fundamentos de Programación"),
+      el("h1", {}, "Repaso de Python"),
+      el("p", { class: "texto-suave" }, "Funciones, ciclos y listas. Todo se resuelve aquí."),
+    ),
+    el(
+      "div",
+      { class: "formulario" },
+      el("label", { class: "campo__etiqueta", for: "nombre" }, "Nombre completo"),
+      nombre,
+      el("label", { class: "campo__etiqueta", for: "matricula" }, "Matrícula"),
+      matricula,
+    ),
+    el(
+      "div",
+      { class: "instrucciones" },
+      el("h2", {}, "Instrucciones"),
+      el(
+        "ol",
+        {},
+        el("li", {}, "Elige un tema y resuelve los ejercicios en el orden que quieras. Todo se contesta en pantalla."),
+        el("li", {}, "Cada ejercicio da ★. Los intentos fallidos y las pistas restan ★, así que piensa antes de revisar."),
+        el("li", {}, "Tu avance se guarda en este navegador: usa siempre el mismo dispositivo y no abras la página en modo incógnito."),
+        el("li", {}, "Al final de la clase toca «📸 Ver mi puntuación final», toma una captura de pantalla y súbela a Canvas."),
+      ),
+    ),
+    barraAcciones(boton(estado.alumno ? "Guardar →" : "Empezar →", guardar)),
+  ];
+}
+
+// =====================================================================
+// Puntuación final (para la captura de pantalla)
+// =====================================================================
+
+function vistaResumen() {
+  const resueltos = datos.ejercicios.filter(resuelto).length;
+  const fecha = new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
+  return [
+    el(
+      "div",
+      { class: "constancia" },
+      el("span", { class: "etiqueta" }, "TC1038 · Repaso de Python"),
+      el("p", { class: "constancia__nombre" }, nombreAlumno()),
+      el("p", { class: "constancia__matricula" }, matriculaAlumno()),
+      el(
+        "div",
+        { class: "constancia__puntos" },
+        el("div", {}, el("strong", {}, puntosTotales()), el("span", {}, `de ${puntosPosibles()} ★`)),
+        el("div", {}, el("strong", {}, resueltos), el("span", {}, `de ${datos.ejercicios.length} ejercicios`)),
+      ),
+      el(
+        "table",
+        { class: "constancia__temas" },
+        el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Tema"), el("th", { scope: "col" }, "Resueltos"), el("th", { scope: "col" }, "★"))),
+        el(
+          "tbody",
+          {},
+          datos.temas.map((tema) => {
+            const lista = datos.ejercicios.filter((e) => e.tema === tema.id);
+            const estrellas = lista.reduce((suma, e) => suma + (estado.hechos[e.id] || 0), 0);
+            return el(
+              "tr",
+              {},
+              el("td", {}, tema.nombre),
+              el("td", {}, `${lista.filter(resuelto).length}/${lista.length}`),
+              el("td", {}, estrellas),
+            );
+          }),
+        ),
+      ),
+      el("p", { class: "constancia__fecha" }, fecha),
+    ),
+    el("p", { class: "texto-suave centrado" }, "Toma una captura de esta pantalla y súbela a Canvas."),
+    barraAcciones(boton("← Seguir practicando", () => ir("#/"), "boton--claro")),
+  ];
+}
+
+// =====================================================================
 // Navegación
 // =====================================================================
 
@@ -1213,7 +1335,12 @@ function mostrar() {
   let contenido = null;
   let titulo = "Repaso TC1038";
 
-  if (ruta.startsWith("ej/")) {
+  if (!estado.alumno || ruta === "datos") {
+    contenido = vistaBienvenida();
+  } else if (ruta === "resumen") {
+    contenido = vistaResumen();
+    titulo = `Puntuación de ${nombreAlumno()} · Repaso TC1038`;
+  } else if (ruta.startsWith("ej/")) {
     const ejercicio = datos.ejercicios.find((e) => e.id === ruta.slice(3));
     if (ejercicio) {
       contenido = vistaEjercicio(ejercicio);
