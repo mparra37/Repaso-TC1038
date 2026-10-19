@@ -9,9 +9,6 @@ const avisoPuntos = document.getElementById("aviso-puntos");
 let datos = null;
 // Ejercicios que el alumno abrió otra vez para practicar (sin puntos).
 const repasos = new Set();
-// Simulacro en curso (solo en memoria: si recarga la página, se pierde).
-let sim = null;
-let relojSim = null;
 
 // ---------- utilidades ----------
 
@@ -105,7 +102,7 @@ function entradasTexto(entradas) {
 
 // ---------- progreso y puntos ----------
 
-const estado = Object.assign({ hechos: {}, fallos: {}, pistas: {}, codigos: {}, simulacro: null }, almacen.leer("estado", {}));
+const estado = Object.assign({ hechos: {}, fallos: {}, pistas: {}, codigos: {} }, almacen.leer("estado", {}));
 
 function guardarEstado() {
   almacen.guardar("estado", estado);
@@ -137,27 +134,10 @@ function puntosPosibles() {
   return datos.ejercicios.reduce((suma, e) => suma + puntosDe(e), 0);
 }
 
-function simEnCurso() {
-  return sim && !sim.terminado;
-}
-
-function formatoTiempo(ms) {
-  const segundos = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
-}
-
 function pintarPuntos() {
   if (!datos) return;
-  if (simEnCurso()) {
-    const restante = sim.fin - Date.now();
-    marcadorPuntos.textContent = `⏱ ${formatoTiempo(restante)}`;
-    marcadorPuntos.className = `puntos reloj${restante < 120000 ? " poco" : ""}`;
-    marcadorPuntos.setAttribute("aria-label", `Tiempo restante ${formatoTiempo(restante)}`);
-  } else {
-    marcadorPuntos.textContent = `★ ${puntosTotales()}`;
-    marcadorPuntos.className = "puntos";
-    marcadorPuntos.setAttribute("aria-label", `${puntosTotales()} puntos`);
-  }
+  marcadorPuntos.textContent = `★ ${puntosTotales()}`;
+  marcadorPuntos.setAttribute("aria-label", `${puntosTotales()} puntos`);
 }
 
 function celebrar(puntos) {
@@ -228,9 +208,8 @@ function celdaIgual(escrito, esperado) {
 // =====================================================================
 // Componentes: uno por tipo de ejercicio.
 // Cada uno regresa { nodo, listo(), revisar(), revelar() }.
-// revisar() regresa { ok, mensaje, fraccion?, detalle?, sigue? }.
+// revisar() regresa { ok, mensaje, detalle?, sigue? }.
 //   sigue: true  → paso intermedio correcto, todavía no termina (sin castigo).
-//   fraccion     → crédito parcial en el simulacro.
 // =====================================================================
 
 function compOpcion(ej, cambio) {
@@ -385,7 +364,6 @@ function compCompletar(ej, cambio) {
       }
       return {
         ok: false,
-        fraccion: (huecos.length - malos) / huecos.length,
         mensaje: malos === 1 ? "Hay un hueco incorrecto (marcado en rojo)." : `Hay ${malos} huecos incorrectos (marcados en rojo).`,
       };
     },
@@ -487,7 +465,7 @@ function compError(ej, cambio) {
         lineaMala = lineaElegida;
         lineaElegida = null;
         pintar();
-        return { ok: false, fraccion: 0, mensaje: `La línea ${lineaMala} está bien. Busca el error en otra.` };
+        return { ok: false, mensaje: `La línea ${lineaMala} está bien. Busca el error en otra.` };
       }
       if (opcionElegida === ej.correcta) {
         cerrada = true;
@@ -497,7 +475,7 @@ function compError(ej, cambio) {
       descartadas.add(opcionElegida);
       opcionElegida = null;
       pintarOpciones();
-      return { ok: false, fraccion: 0.5, mensaje: "Esa corrección no arregla el problema. Prueba con otra." };
+      return { ok: false, mensaje: "Esa corrección no arregla el problema. Prueba con otra." };
     },
     revelar() {
       paso = 2;
@@ -562,7 +540,6 @@ function compTraza(ej, cambio) {
       }
       return {
         ok: false,
-        fraccion: (celdas.length - malas) / celdas.length,
         mensaje: malas === 1 ? "Hay una celda incorrecta (en rojo)." : `Hay ${malas} celdas incorrectas (en rojo).`,
       };
     },
@@ -695,6 +672,11 @@ function compOrdenar(ej, cambio) {
       if (k >= colocadas.length) return { k: null, mensaje: `Faltan líneas: el programa completo tiene ${solucion.length}.` };
       const grupo = grupoDe(k);
       if (grupo && grupo[0] === k) {
+        if (colocadas.length <= grupo[1]) {
+          const dentro = solucion.slice(grupo[0], grupo[1] + 1);
+          const todasBien = colocadas.slice(grupo[0]).every((c) => dentro.some((s) => s.texto === c.pieza.texto && s.sangria === c.sangria));
+          if (todasBien) return { k: null, mensaje: `Faltan líneas: el programa completo tiene ${solucion.length}.` };
+        }
         const esperado = solucion.slice(grupo[0], grupo[1] + 1).map((s) => `${s.sangria}|${s.texto}`).sort();
         const puestos = colocadas.slice(grupo[0], grupo[1] + 1).map((c) => `${c.sangria}|${c.pieza.texto}`).sort();
         if (esperado.join("\n") === puestos.join("\n")) {
@@ -739,8 +721,7 @@ function compOrdenar(ej, cambio) {
       }
       marcada = problema.k;
       pintar();
-      const bien = problema.k === null ? colocadas.length : problema.k;
-      return { ok: false, fraccion: Math.min(bien, solucion.length) / solucion.length, mensaje: problema.mensaje };
+      return { ok: false, mensaje: problema.mensaje };
     },
     revelar() {
       colocadas = solucion.map((s) => ({ pieza: piezas.find((p) => p.texto === s.texto && p.id.startsWith("l")), sangria: s.sangria }));
@@ -853,15 +834,12 @@ function explicarError(error) {
   return { titulo: `El programa se detuvo (${error.tipo})`, texto: donde + (ERRORES_EJECUCION[error.tipo] || `ocurrió ${error.tipo}.`) };
 }
 
-function compPrograma(ej, cambio, modo) {
+function compPrograma(ej, cambio) {
   const clave = `codigo:${ej.id}`;
-  const enSimulacro = modo === "simulacro";
-  const inicial = enSimulacro ? ej.inicial || "" : almacen.leer(clave, ej.inicial || "");
-  const editor = crearEditor(inicial, (texto) => {
-    if (!enSimulacro) almacen.guardar(clave, texto);
+  const editor = crearEditor(almacen.leer(clave, ej.inicial || ""), (texto) => {
+    almacen.guardar(clave, texto);
     cambio();
   });
-  const consolaPrueba = el("div", { class: "grupo", "aria-live": "polite" });
   preparar().catch(() => {});
 
   const ejemplo = ej.ejemplo
@@ -876,34 +854,6 @@ function compPrograma(ej, cambio, modo) {
         { class: "codigo", "aria-label": "Ejemplo de uso" },
         ej.ejemplo_llamadas.map((e) => [el("span", { class: "prompt" }, ">>> "), resaltar(e.llamada), `\n${e.resultado}\n`]),
       );
-
-  async function probar(botonProbar) {
-    botonProbar.disabled = true;
-    reemplazar(consolaPrueba, el("p", { class: "texto-suave" }, "Ejecutando…"));
-    let codigo = editor.valor;
-    let problema = { pruebas: [], ejemplo: { entradas: ej.ejemplo ? ej.ejemplo.entradas : [] } };
-    if (ej.ejemplo_llamadas) codigo += "\n\n" + ej.ejemplo_llamadas.map((e) => `print(${e.llamada})`).join("\n") + "\n";
-    try {
-      const reporte = await evaluar(codigo, problema);
-      if (reporte.error && ["SyntaxError", "IndentationError", "TabError"].includes(reporte.error.tipo)) {
-        const info = explicarError(reporte.error);
-        if (reporte.error.linea) editor.marcarLinea(reporte.error.linea);
-        reemplazar(consolaPrueba, cajaRetro("mal", info.titulo, info.texto));
-      } else {
-        reemplazar(
-          consolaPrueba,
-          el("span", { class: "etiqueta" }, "Así corre con el ejemplo"),
-          el("pre", { class: "codigo salida" }, reporte.consola || "(no imprimió nada)"),
-        );
-      }
-    } catch (error) {
-      reemplazar(consolaPrueba, el("p", { class: "texto-suave" }, error.message === "TIEMPO" ? "Tardó demasiado y se detuvo: ¿hay un ciclo infinito?" : "No se pudo cargar Python. Revisa tu internet."));
-    } finally {
-      botonProbar.disabled = false;
-    }
-  }
-
-  const botonProbar = boton("▶ Probar con el ejemplo", () => probar(botonProbar), "boton--claro");
 
   return {
     nodo: [
@@ -923,7 +873,6 @@ function compPrograma(ej, cambio, modo) {
         el("div", { class: "dato" }, el("span", {}, "Ejemplo"), ejemplo),
       ),
       editor.nodo,
-      enSimulacro ? [el("div", { class: "probar" }, botonProbar), consolaPrueba] : null,
     ],
     esPrograma: true,
     listo: () => editor.valor.trim() !== "" && editor.valor.trim() !== (ej.inicial || "").trim(),
@@ -934,7 +883,7 @@ function compPrograma(ej, cambio, modo) {
         reporte = await evaluar(codigo, ej);
       } catch (error) {
         if (error.message === "TIEMPO") {
-          return { ok: false, fraccion: 0, mensaje: "Tu programa tardó demasiado y se detuvo: ¿hay un ciclo infinito o un input() de más?" };
+          return { ok: false, mensaje: "Tu programa tardó demasiado y se detuvo: ¿hay un ciclo infinito o un input() de más?" };
         }
         return { sigue: true, mensaje: "No se pudo cargar Python. Revisa tu internet y vuelve a intentarlo." };
       }
@@ -943,7 +892,7 @@ function compPrograma(ej, cambio, modo) {
       const pasadas = reporte.pruebas.filter((p) => p.ok).length;
       const ok = !reporte.error && total > 0 && pasadas === total && reporte.avisos.length === 0;
       if (ok) {
-        if (!enSimulacro) estado.codigos[ej.id] = codigo;
+        estado.codigos[ej.id] = codigo;
         editor.area.readOnly = true;
         return { ok: true };
       }
@@ -968,16 +917,12 @@ function compPrograma(ej, cambio, modo) {
           ? el("details", { class: "consola" }, el("summary", {}, "Ver lo que imprimió con el ejemplo"), el("pre", { class: "codigo" }, reporte.consola))
           : null,
       ];
-      return { ok: false, fraccion: total ? (reporte.error ? 0 : pasadas / total) : 0, mensaje, detalle };
+      return { ok: false, mensaje, detalle };
     },
     revelar() {
       const guardado = estado.codigos[ej.id];
-      if (guardado && !enSimulacro) editor.valor = guardado;
+      if (guardado) editor.valor = guardado;
       editor.area.readOnly = true;
-      botonProbar.disabled = true;
-    },
-    desbloquear() {
-      editor.area.readOnly = false;
     },
   };
 }
@@ -999,8 +944,6 @@ const COMPONENTES = {
 function vistaInicio() {
   const resueltos = datos.ejercicios.filter(resuelto).length;
   const empezado = resueltos > 0;
-  const mejor = estado.simulacro?.mejor;
-  const preguntasSim = armarSimulacro().length;
 
   return [
     el(
@@ -1015,19 +958,7 @@ function vistaInicio() {
       el("div", {}, el("strong", {}, puntosTotales()), el("span", {}, `de ${puntosPosibles()} ★`)),
       el("div", {}, el("strong", {}, resueltos), el("span", {}, `de ${datos.ejercicios.length} ejercicios`)),
     ),
-    el(
-      "a",
-      { class: "tarjeta-sim", href: "#/simulacro" },
-      el("span", { class: "tarjeta-sim__icono", "aria-hidden": "true" }, "⏱"),
-      el(
-        "span",
-        { class: "tarjeta-sim__texto" },
-        el("strong", {}, simEnCurso() ? "Simulacro en curso" : "Simulacro de examen"),
-        el("span", {}, simEnCurso() ? `Quedan ${formatoTiempo(sim.fin - Date.now())} · toca para seguir` : `${datos.simulacro.minutos} min · ${preguntasSim} preguntas de todos los temas`),
-      ),
-      mejor !== undefined && mejor !== null ? el("span", { class: "tarjeta-sim__dato" }, "Mejor", el("br"), `${mejor}/100`) : null,
-    ),
-    el("p", { class: "subtitulo" }, "Practica por tema"),
+    el("p", { class: "subtitulo" }, "Temas"),
     el(
       "nav",
       { class: "lista", "aria-label": "Temas" },
@@ -1115,7 +1046,7 @@ function vistaEjercicio(ej) {
   const zonaPistas = el("div", { class: "pistas" });
   let terminado = false;
 
-  const comp = COMPONENTES[ej.tipo](ej, actualizarBoton, "practica");
+  const comp = COMPONENTES[ej.tipo](ej, actualizarBoton);
   const principal = boton("Revisar", accion);
   const verRespuesta = boton("Ver la respuesta (0 ★)", revelar, "boton--enlace ver-respuesta");
   verRespuesta.hidden = true;
@@ -1273,264 +1204,6 @@ function vistaEjercicio(ej) {
 }
 
 // =====================================================================
-// Simulacro
-// =====================================================================
-
-function armarSimulacro() {
-  const cfg = datos.simulacro;
-  const elegidos = [];
-  for (const tema of datos.temas) {
-    if ((cfg.sin_tema || []).includes(tema.id)) continue;
-    const candidatos = barajar(datos.ejercicios.filter((e) => e.tema === tema.id && e.tipo !== "programa"));
-    const delTema = [];
-    for (const e of candidatos) {
-      if (delTema.length < cfg.por_tema && !delTema.some((x) => x.tipo === e.tipo)) delTema.push(e);
-    }
-    for (const e of candidatos) {
-      if (delTema.length < cfg.por_tema && !delTema.includes(e)) delTema.push(e);
-    }
-    elegidos.push(...delTema);
-  }
-  const programas = barajar(datos.ejercicios.filter((e) => e.tipo === "programa")).slice(0, cfg.programas);
-  return [...elegidos, ...programas];
-}
-
-function iniciarSimulacro() {
-  const preguntas = armarSimulacro();
-  sim = {
-    ids: preguntas.map((e) => e.id),
-    res: {},
-    inicio: Date.now(),
-    fin: Date.now() + datos.simulacro.minutos * 60000,
-    terminado: false,
-    agotado: false,
-  };
-  if (preguntas.some((e) => e.tipo === "programa")) preparar().catch(() => {});
-  clearInterval(relojSim);
-  relojSim = setInterval(tic, 1000);
-  pintarPuntos();
-  ir("#/simulacro/1");
-}
-
-function tic() {
-  if (!simEnCurso()) {
-    clearInterval(relojSim);
-    pintarPuntos();
-    return;
-  }
-  if (Date.now() >= sim.fin) {
-    sim.agotado = true;
-    terminarSimulacro();
-    return;
-  }
-  pintarPuntos();
-}
-
-function terminarSimulacro() {
-  if (!sim || sim.terminado) return;
-  sim.terminado = true;
-  sim.final = Math.min(Date.now(), sim.fin);
-  clearInterval(relojSim);
-  const calificacion = calificacionSim();
-  const previo = estado.simulacro || {};
-  estado.simulacro = {
-    mejor: Math.max(previo.mejor ?? 0, calificacion),
-    ultimo: calificacion,
-    veces: (previo.veces || 0) + 1,
-  };
-  guardarEstado();
-  ir("#/simulacro/fin");
-}
-
-function calificacionSim() {
-  let obtenidos = 0;
-  let posibles = 0;
-  for (const id of sim.ids) {
-    const ej = datos.ejercicios.find((e) => e.id === id);
-    posibles += puntosDe(ej);
-    obtenidos += puntosDe(ej) * (sim.res[id]?.fraccion || 0);
-  }
-  return Math.round((100 * obtenidos) / posibles);
-}
-
-function vistaSimInicio() {
-  if (simEnCurso()) {
-    const respondidas = Object.keys(sim.res).length;
-    return [
-      el("div", { class: "encabezado" }, el("h1", {}, "Simulacro en curso"), el("p", { class: "texto-suave" }, `Llevas ${respondidas} de ${sim.ids.length}. Quedan ${formatoTiempo(sim.fin - Date.now())}.`)),
-      el("div", { class: "pie-inicio" }, boton("Terminar ahora y ver resultado", () => {
-        if (confirm("¿Terminar el simulacro? Las preguntas sin responder cuentan 0.")) terminarSimulacro();
-      }, "boton--enlace")),
-      barraAcciones(boton("Seguir →", () => ir(`#/simulacro/${Math.min(sim.ids.length, respondidas + 1)}`))),
-    ];
-  }
-  const total = armarSimulacro().length;
-  return [
-    el("div", { class: "encabezado" }, el("h1", {}, "Simulacro de examen"), el("p", { class: "texto-suave" }, "Preguntas al azar de todos los temas, contra reloj.")),
-    el(
-      "ul",
-      { class: "reglas" },
-      el("li", {}, `${total} preguntas en ${datos.simulacro.minutos} minutos. El tiempo corre arriba a la derecha.`),
-      el("li", {}, "Una sola oportunidad por pregunta y sin pistas."),
-      el("li", {}, "En el programa puedes probar tu código con el ejemplo antes de entregarlo."),
-      el("li", {}, "Las respuestas a medias cuentan parcial: huecos, celdas o casos de prueba correctos."),
-      el("li", {}, "Al final ves tu calificación y qué temas repasar."),
-    ),
-    estado.simulacro ? el("p", { class: "texto-suave" }, `Tu mejor calificación: ${estado.simulacro.mejor}/100 · última: ${estado.simulacro.ultimo}/100.`) : null,
-    barraAcciones(boton("←", () => ir("#/"), "boton--claro boton--icono"), boton("Empezar ⏱", iniciarSimulacro)),
-  ];
-}
-
-function vistaSimPregunta(numero) {
-  const id = sim.ids[numero - 1];
-  const ej = datos.ejercicios.find((e) => e.id === id);
-  const total = sim.ids.length;
-  const ultimo = numero === total;
-  const tipo = datos.tipos[ej.tipo];
-  const retro = el("div", { class: "retro-zona", "aria-live": "polite" });
-  const comp = COMPONENTES[ej.tipo](ej, actualizarBoton, "simulacro");
-  const principal = boton(ej.tipo === "programa" ? "Entregar" : "Revisar", accion);
-  const saltar = boton("Saltar", () => {
-    if (!sim.res[id]) sim.res[id] = { fraccion: 0, saltada: true };
-    avanzar();
-  }, "boton--claro");
-
-  function avanzar() {
-    if (ultimo) terminarSimulacro();
-    else ir(`#/simulacro/${numero + 1}`);
-  }
-
-  function actualizarBoton() {
-    if (sim.res[id]) {
-      principal.textContent = ultimo ? "Ver resultado" : "Siguiente →";
-      principal.disabled = false;
-      saltar.hidden = true;
-    } else {
-      principal.textContent = ej.tipo === "programa" ? "Entregar" : "Revisar";
-      principal.disabled = !comp.listo();
-    }
-  }
-
-  function mostrarResultado(res, mensaje, detalle) {
-    const clase = res.fraccion >= 1 ? "ok" : res.fraccion > 0 ? "info" : "mal";
-    const titulo = res.saltada ? "Pregunta saltada" : res.fraccion >= 1 ? "¡Correcto!" : res.fraccion > 0 ? `Crédito parcial: ${Math.round(res.fraccion * 100)} %` : "Incorrecto";
-    reemplazar(
-      retro,
-      cajaRetro(clase, titulo, mensaje || null, detalle ? el("div", { class: "detalle" }, detalle) : null),
-      ej.explicacion && res.fraccion < 1 ? cajaRetro("info", "Explicación", ej.explicacion) : null,
-    );
-  }
-
-  async function accion() {
-    if (sim.res[id]) return avanzar();
-    if (!comp.listo()) return;
-    principal.disabled = true;
-    principal.textContent = "Revisando…";
-    const r = await comp.revisar();
-    if (!simEnCurso()) return;
-    if (r.sigue) {
-      reemplazar(retro, cajaRetro("info", "Vas bien", r.mensaje));
-      enfocarRetro(retro);
-      actualizarBoton();
-      return;
-    }
-    const res = { fraccion: r.ok ? 1 : r.fraccion || 0 };
-    sim.res[id] = res;
-    if (!r.ok) comp.revelar();
-    mostrarResultado(res, r.ok ? null : r.mensaje, r.detalle);
-    enfocarRetro(retro);
-    actualizarBoton();
-  }
-
-  if (sim.res[id]) {
-    comp.revelar();
-    mostrarResultado(sim.res[id], null, null);
-  }
-  actualizarBoton();
-
-  return [
-    el(
-      "div",
-      { class: "encabezado" },
-      el(
-        "div",
-        { class: "encabezado__fila" },
-        el("span", { class: "etiqueta" }, `${numero} de ${total} · ${temaDe(ej).nombre}`),
-        el("span", { class: "chip chip--tipo" }, tipo.nombre),
-      ),
-      el("div", { class: "progreso" }, el("span", { style: `width:${(numero / total) * 100}%` })),
-    ),
-    comp.nodo,
-    retro,
-    barraAcciones(saltar, principal),
-  ];
-}
-
-function vistaSimFin() {
-  const calificacion = calificacionSim();
-  const usado = (sim.final || Date.now()) - sim.inicio;
-  const clase = calificacion >= 80 ? "ok" : calificacion >= 60 ? "medio" : "mal";
-  const porTema = datos.temas
-    .map((tema) => {
-      const ids = sim.ids.filter((id) => datos.ejercicios.find((e) => e.id === id).tema === tema.id);
-      const aciertos = ids.reduce((s, id) => s + (sim.res[id]?.fraccion || 0), 0);
-      return { tema, total: ids.length, aciertos };
-    })
-    .filter((t) => t.total > 0);
-  const fallados = sim.ids.map((id) => datos.ejercicios.find((e) => e.id === id)).filter((e) => (sim.res[e.id]?.fraccion || 0) < 1);
-
-  return [
-    el(
-      "div",
-      { class: `resultado ${clase}` },
-      el("div", { class: "resultado__icono" }, clase === "ok" ? "★" : clase === "medio" ? "≈" : "✗"),
-      el("p", { class: "calificacion" }, calificacion),
-      el("p", { class: "texto-suave" }, `de 100 · ${sim.agotado ? "se acabó el tiempo" : `en ${formatoTiempo(usado)} min`}`),
-    ),
-    el("p", { class: "subtitulo" }, "Por tema"),
-    el(
-      "div",
-      { class: "temas-sim" },
-      porTema.map(({ tema, total, aciertos }) => {
-        const proporcion = aciertos / total;
-        const nivel = proporcion >= 0.8 ? "" : proporcion >= 0.5 ? " media" : " baja";
-        return el(
-          "div",
-          { class: "tema-sim" },
-          el("div", { class: "tema-sim__fila" }, el("span", {}, tema.nombre), el("span", {}, `${Math.round(aciertos * 10) / 10} de ${total}`)),
-          el("div", { class: `barra-avance${nivel}` }, el("span", { style: `width:${Math.max(4, proporcion * 100)}%` })),
-        );
-      }),
-    ),
-    fallados.length
-      ? [
-          el("p", { class: "subtitulo" }, "Para repasar"),
-          el(
-            "nav",
-            { class: "lista", "aria-label": "Ejercicios para repasar" },
-            fallados.map((e) =>
-              el(
-                "a",
-                {
-                  class: "fila",
-                  href: `#/ej/${e.id}`,
-                  onclick: () => {
-                    if (resuelto(e)) repasos.add(e.id);
-                  },
-                },
-                el("span", { class: "fila__numero" }, "↺"),
-                el("span", { class: "fila__texto" }, el("strong", {}, datos.tipos[e.tipo].nombre), el("span", {}, temaDe(e).nombre)),
-                el("span", { class: "fila__avance" }, `${Math.round((sim.res[e.id]?.fraccion || 0) * 100)} %`),
-              ),
-            ),
-          ),
-        ]
-      : el("p", { class: "texto-suave" }, "¡Todo correcto! Prueba otro simulacro: las preguntas cambian."),
-    barraAcciones(boton("Inicio", () => ir("#/"), "boton--claro"), boton("Otro simulacro", iniciarSimulacro)),
-  ];
-}
-
-// =====================================================================
 // Navegación
 // =====================================================================
 
@@ -1540,24 +1213,7 @@ function mostrar() {
   let contenido = null;
   let titulo = "Repaso TC1038";
 
-  if (ruta === "simulacro") {
-    contenido = vistaSimInicio();
-    titulo = "Simulacro · Repaso TC1038";
-  } else if (ruta === "simulacro/fin") {
-    if (sim && sim.terminado) contenido = vistaSimFin();
-    else if (sim) contenido = vistaSimInicio();
-    titulo = "Resultado del simulacro · Repaso TC1038";
-  } else if (ruta.startsWith("simulacro/")) {
-    const numero = Number(ruta.slice(10));
-    if (simEnCurso() && numero >= 1 && numero <= sim.ids.length) {
-      contenido = vistaSimPregunta(numero);
-      titulo = `Simulacro ${numero} · Repaso TC1038`;
-    } else if (sim && sim.terminado) {
-      contenido = vistaSimFin();
-    } else {
-      contenido = vistaSimInicio();
-    }
-  } else if (ruta.startsWith("ej/")) {
+  if (ruta.startsWith("ej/")) {
     const ejercicio = datos.ejercicios.find((e) => e.id === ruta.slice(3));
     if (ejercicio) {
       contenido = vistaEjercicio(ejercicio);

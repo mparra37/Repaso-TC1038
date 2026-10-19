@@ -61,14 +61,6 @@
    "puntos": 4
   }
  },
- "simulacro": {
-  "minutos": 20,
-  "por_tema": 2,
-  "programas": 1,
-  "sin_tema": [
-   "ret"
-  ]
- },
  "ejercicios": [
   {
    "id": "fun1",

@@ -29,8 +29,6 @@ Todos son interactivos, de siete tipos:
 
 Cada intento fallido o pista resta 1 ★ a ese ejercicio (mínimo 1). Después de dos intentos aparece «Ver la respuesta», que deja el ejercicio en 0 ★. Los puntos se guardan en el navegador de cada alumno, y en la pantalla de inicio está «Reiniciar puntos».
 
-**Simulacro de examen:** 11 preguntas al azar en 20 minutos (2 de cada tema, sin contar Retos, y un programa), con una oportunidad por pregunta y crédito parcial. Al final muestra la calificación sobre 100, el resultado por tema y los ejercicios para repasar. Cada simulacro sale distinto.
-
 ## Estructura
 
 ```
@@ -109,7 +107,7 @@ Formatos rápidos:
 
 1. Que todos pulsen «Reiniciar puntos» si ya la habían abierto.
 2. 25–30 min de práctica por tema, en el orden que quieran; gana quien tenga más ★.
-3. Cierre con un simulacro de 20 min y comenten los temas que salieron más bajos.
+3. Cierre: comenten los ejercicios en los que más se equivocaron.
 
 ## Límites conocidos
 
